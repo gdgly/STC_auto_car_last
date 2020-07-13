@@ -1,0 +1,14 @@
+C51 COMPILER V9.01   MY_I2C                                                                06/29/2020 15:42:27 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MY_I2C
+OBJECT MODULE PLACED IN .\Out_File\My_I2C.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\CODE\My_I2C.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\Libraries\l
+                    -ibraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\USER\inc;..\USER\src;..\CODE) DEBUG O
+                    -BJECTEXTEND PRINT(.\Out_File\My_I2C.lst) TABS(2) OBJECT(.\Out_File\My_I2C.obj)
+
+line level    source
+
+*** ERROR C318 OF ..\CODE\My_I2C.c: can't open file '..\CODE\My_I2C.c'
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

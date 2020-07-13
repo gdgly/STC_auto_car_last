@@ -1,0 +1,392 @@
+C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MPU6050
+OBJECT MODULE PLACED IN .\Out_File\Mpu6050.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\CODE\Mpu6050.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\Libraries\
+                    -libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\USER\inc;..\USER\src;..\CODE) DEBUG 
+                    -OBJECTEXTEND PRINT(.\Out_File\Mpu6050.lst) TABS(2) OBJECT(.\Out_File\Mpu6050.obj)
+
+line level    source
+
+   1          /*
+   2           * @Description  : 
+   3           * @Version      : 
+   4           * @Date         : 2020-06-18 16:23:44
+   5           * @LastEditTime : 2020-06-27 22:30:17
+   6           */
+   7          #include "Mpu6050.h"
+   8          
+   9          char Offset_OK = 0;
+  10          
+  11          /*
+  12           * 函数名：MPU6050_Init
+  13           * 描述  ：陀螺仪初始化
+  14           * 输入  ：无
+  15           * 输出  ：0成功  1失败
+  16           * 调用  ：外部调用
+  17           */
+  18          uchar My_MPU6050_Init(void)
+  19          {
+  20   1        uchar res;
+  21   1        MPU6050_WR(MPU_PWR_MGMT1_REG, 0X80); // 复位MPU6050
+  22   1        delay_ms(10);
+  23   1        MPU6050_WR(MPU_PWR_MGMT1_REG, 0X00); // 唤醒MPU6050
+  24   1        delay_ms(10);
+  25   1        MPU6050_WR(MPU_PWR_MGMT1_REG, 0X01); // 设置CLKSEL,PLL X轴为参考
+  26   1        delay_ms(10);
+  27   1        MPU6050_WR(MPU_GYRO_CFG_REG, 3 << 3); // 陀螺仪传感器,±2000dps // 0,±250dps;1,±500dps;2,±1000dp
+             -s;3,±2000dps
+  28   1        delay_ms(10);
+  29   1        MPU6050_WR(MPU_ACCEL_CFG_REG, 0 << 3); // 加速度传感器,±2g   // 0,±2g;1,±4g;2,±8g;3,±16g
+  30   1        delay_ms(10);
+  31   1        MPU6050_WR(MPU_SAMPLE_RATE_REG, 0X00); // 设置MPU6050的采样率,1KHz
+  32   1        delay_ms(10);
+  33   1        MPU6050_WR(MPU_CFG_REG, 0X01); // 设置数字低通滤波器,188Hz
+  34   1        delay_ms(100);
+  35   1      
+  36   1        res = MPU6050_RD(MPU_DEVICE_ID_REG);
+  37   1        if (res == MPU6050_ADRESS) // 器件ID正确
+  38   1        {
+  39   2          MPU6050_Offset();
+  40   2          Balance_Init();
+  41   2          return 0;
+  42   2        }
+  43   1        else
+  44   1        {
+  45   2          return 1;
+  46   2        }
+  47   1      }
+  48          
+  49          /*
+  50           * 函数名：MPU6050_Offset
+  51           * 描述  ：传感器采集零偏
+  52           * 输入  ：无
+C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 2   
+
+  53           * 输出  ：无
+  54           * 调用  ：内部调用
+  55           */
+  56          void MPU6050_Offset(void)
+  57          {
+  58   1        uint8 i, Count = 100;
+  59   1        int32 temp[6] = {0};
+  60   1      
+  61   1        GYRO_Offset.X = 0;
+  62   1        GYRO_Offset.Y = 0;
+  63   1        GYRO_Offset.Z = 0;
+  64   1      
+  65   1        for (i = 0; i < Count; i++)
+  66   1        {
+  67   2          MPU6050_GetData(&GYRO, &ACC); // 读取陀螺仪数据
+  68   2          delay_ms(2);
+  69   2      
+  70   2          temp[0] += ACC.X;
+  71   2          temp[1] += ACC.Y;
+  72   2          temp[2] += ACC.Z;
+  73   2      
+  74   2          temp[3] += GYRO.X;
+  75   2          temp[4] += GYRO.Y;
+  76   2          temp[5] += GYRO.Z;
+  77   2        }
+  78   1        ACC_Offset.X = temp[0] / Count;
+  79   1        ACC_Offset.Y = temp[1] / Count;
+  80   1        ACC_Offset.Z = temp[2] / Count;
+  81   1      
+  82   1        GYRO_Offset.X = temp[3] / Count;
+  83   1        GYRO_Offset.Y = temp[4] / Count;
+  84   1        GYRO_Offset.Z = temp[5] / Count;
+  85   1      
+  86   1        Offset_OK = 1;
+  87   1      }
+  88          
+  89          /*
+  90           * 函数名：MPU6050_GetData
+  91           * 描述  ：获得传感器所有数据
+  92           * 输入  ：*GYRO 陀螺仪   *ACC 加速度计
+  93           * 输出  ：无
+  94           * 调用  ：外部调用
+  95           */
+  96          void MPU6050_GetData(S_INT16_XYZ *GYRO, S_INT16_XYZ *ACC)
+  97          {
+  98   1        if (Offset_OK)
+  99   1        {
+ 100   2          ACC->X = GetData(MPU_ACCEL_XOUTH_REG); // 获取加速度计原始数据
+ 101   2          ACC->Y = GetData(MPU_ACCEL_YOUTH_REG);
+ 102   2          ACC->Z = GetData(MPU_ACCEL_ZOUTH_REG);
+ 103   2      
+ 104   2          GYRO->X = GetData(MPU_GYRO_XOUTH_REG) - GYRO_Offset.X; // 获取陀螺仪原始数据
+ 105   2          GYRO->Y = GetData(MPU_GYRO_YOUTH_REG) - GYRO_Offset.Y;
+ 106   2          GYRO->Z = GetData(MPU_GYRO_ZOUTH_REG) - GYRO_Offset.Z;
+ 107   2        }
+ 108   1        else
+ 109   1        {
+ 110   2          ACC->X = GetData(MPU_ACCEL_XOUTH_REG); // 获取加速度计原始数据并归一化
+ 111   2          ACC->Y = GetData(MPU_ACCEL_YOUTH_REG);
+ 112   2          ACC->Z = GetData(MPU_ACCEL_ZOUTH_REG);
+ 113   2      
+ 114   2          GYRO->X = GetData(MPU_GYRO_XOUTH_REG); // 获取陀螺仪原始数据并归一化
+C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 3   
+
+ 115   2          GYRO->Y = GetData(MPU_GYRO_YOUTH_REG);
+ 116   2          GYRO->Z = GetData(MPU_GYRO_ZOUTH_REG);
+ 117   2        }
+ 118   1      }
+ 119          
+ 120          /*
+ 121           * 函数名：GetData
+ 122           * 描述  ：获得16位数据
+ 123           * 输入  ：REG_Address 寄存器地址
+ 124           * 输出  ：返回寄存器数据
+ 125           * 调用  ：外部调用
+ 126           */
+ 127          int16 GetData(uchar reg)
+ 128          {
+ 129   1        uchar H, L;
+ 130   1      
+ 131   1        H = MPU6050_RD(reg);
+ 132   1        L = MPU6050_RD(reg + 1);
+ 133   1      
+ 134   1        return ((H << 8) | L); //合成数据
+ 135   1      }
+ 136          
+ 137          #define AcceRatio 16384.0f
+ 138          #define GyroRatio 16.4f
+ 139          #define Gyro_Gr 0.0010653                                // 角速度变成弧度 此参数对应陀螺2000度每秒
+ 140          #define ACC_FILTER_NUM 5                                 // 加速度计滤波深度
+ 141          #define GYRO_FILTER_NUM 1                                // 陀螺仪滤波深度
+ 142          int32 ACC_X_BUF[ACC_FILTER_NUM], ACC_Y_BUF[ACC_FILTER_NUM], ACC_Z_BUF[ACC_FILTER_NUM]; // 滤波缓存数�
+             -��
+ 143          int32 GYRO_X_BUF[GYRO_FILTER_NUM], GYRO_Y_BUF[GYRO_FILTER_NUM], GYRO_Z_BUF[GYRO_FILTER_NUM];
+ 144          /*
+ 145           * 函数名：Data_Filter
+ 146           * 描述  ：数据滑动滤波
+ 147           * 输入  ：无
+ 148           * 输出  ：无
+ 149           * 调用  ：外部调用
+ 150           */
+ 151          void Data_Filter(void) // 数据滤波
+ 152          {
+ 153   1        uchar i;
+ 154   1        //float ACC_Angle;
+ 155   1        int32 temp1 = 0, temp2 = 0, temp3 = 0, temp4 = 0, temp5 = 0, temp6 = 0;
+ 156   1      
+ 157   1        ACC_X_BUF[0] = ACC.X; // 更新滑动窗口数组
+ 158   1        ACC_Y_BUF[0] = ACC.Y;
+ 159   1        ACC_Z_BUF[0] = ACC.Z;
+ 160   1        GYRO_X_BUF[0] = GYRO.X;
+ 161   1        GYRO_Y_BUF[0] = GYRO.Y;
+ 162   1        GYRO_Z_BUF[0] = GYRO.Z;
+ 163   1      
+ 164   1        for (i = 0; i < ACC_FILTER_NUM; i++)
+ 165   1        {
+ 166   2          temp1 += ACC_X_BUF[i];
+ 167   2          temp2 += ACC_Y_BUF[i];
+ 168   2          temp3 += ACC_Z_BUF[i];
+ 169   2        }
+ 170   1        for (i = 0; i < GYRO_FILTER_NUM; i++)
+ 171   1        {
+ 172   2          temp4 += GYRO_X_BUF[i];
+ 173   2          temp5 += GYRO_Y_BUF[i];
+ 174   2          temp6 += GYRO_Z_BUF[i];
+ 175   2        }
+C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 4   
+
+ 176   1      
+ 177   1        ACC_Real.X = temp1 / ACC_FILTER_NUM / AcceRatio;
+ 178   1        ACC_Real.Y = temp2 / ACC_FILTER_NUM / AcceRatio;
+ 179   1        ACC_Real.Z = temp3 / ACC_FILTER_NUM / AcceRatio;
+ 180   1        GYRO_Real.X = temp4 / GYRO_FILTER_NUM / GyroRatio;
+ 181   1        GYRO_Real.Y = temp5 / GYRO_FILTER_NUM / GyroRatio;
+ 182   1        GYRO_Real.Z = temp6 / GYRO_FILTER_NUM / GyroRatio;
+ 183   1      
+ 184   1        for (i = 0; i < ACC_FILTER_NUM - 1; i++)
+ 185   1        {
+ 186   2          ACC_X_BUF[ACC_FILTER_NUM - 1 - i] = ACC_X_BUF[ACC_FILTER_NUM - 2 - i];
+ 187   2          ACC_Y_BUF[ACC_FILTER_NUM - 1 - i] = ACC_Y_BUF[ACC_FILTER_NUM - 2 - i];
+ 188   2          ACC_Z_BUF[ACC_FILTER_NUM - 1 - i] = ACC_Z_BUF[ACC_FILTER_NUM - 2 - i];
+ 189   2        }
+ 190   1        for (i = 0; i < GYRO_FILTER_NUM - 1; i++)
+ 191   1        {
+ 192   2          GYRO_X_BUF[GYRO_FILTER_NUM - 1 - i] = GYRO_X_BUF[GYRO_FILTER_NUM - 2 - i];
+ 193   2          GYRO_Y_BUF[GYRO_FILTER_NUM - 1 - i] = GYRO_Y_BUF[GYRO_FILTER_NUM - 2 - i];
+ 194   2          GYRO_Z_BUF[GYRO_FILTER_NUM - 1 - i] = GYRO_Z_BUF[GYRO_FILTER_NUM - 2 - i];
+ 195   2        }
+ 196   1      }
+ 197          
+ 198          /*
+ 199          //非矩阵卡尔曼滤波，这些参数不用改
+ 200          #define Peried 1/500.0f   //卡尔曼积分周期
+ 201          #define Q 2.0f        //过程噪声2.0   越小积分越慢，跟踪加速度计越慢越平滑
+ 202          #define R 5000.0f     //测量噪声5000.0  越小跟踪加速度计越快
+ 203          float KalmanGain = 1.0f;  //卡尔曼增益
+ 204          
+ 205          void KalmanFilter(float ACC_Angle)
+ 206          {
+ 207            //卡尔曼滤波局部参量
+ 208              static float Priori_Estimation = 0;//先验估计
+ 209              static float Posterior_Estimation = 0;//后验估计
+ 210              static float Priori_Convariance = 0;//先验方差
+ 211              static float Posterior_Convariance = 0;//后验方差
+ 212              
+ 213            //卡尔曼滤波
+ 214              //1.时间更新(预测) : X(k|k-1) = A(k,k-1)*X(k-1|k-1) + B(k)*u(k) 
+ 215              Priori_Estimation = Posterior_Estimation - GYRO_Real.Y*Peried;    //先验估计，积分获得角度
+ 216            if (Priori_Estimation != Priori_Estimation)
+ 217            {
+ 218              Priori_Estimation = 0;
+ 219            }
+ 220            
+ 221              //2.更新先验协方差  : P(k|k-1) = A(k,k-1)*P(k-1|k-1)*A(k,k-1)'+Q(k) 
+ 222              Priori_Convariance = (float)sqrt( Posterior_Convariance * Posterior_Convariance + Q * Q );
+ 223            if (Priori_Convariance != Priori_Convariance)
+ 224            {
+ 225              Priori_Convariance = 0;
+ 226            }
+ 227            
+ 228              //  卡尔曼后验估计：测量更新  
+ 229              // 1.计算卡尔曼增益  : K(k) = P(k|k-1)*H(k)' / (H(k)*P(k|k-1)*H(k)' + R(k)) /
+ 230              KalmanGain = (float)sqrt( Priori_Convariance * Priori_Convariance / ( Priori_Convariance * Priori_Conv
+             -ariance + R * R ) );
+ 231            if (KalmanGain != KalmanGain)
+ 232            {
+ 233              KalmanGain = 1;
+ 234            }
+ 235            
+ 236              //2.测量更新(校正): X(k|k) = X(k|k-1)+K(k)*(Z(k)-H(k)*X(k|k-1)) 
+C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 5   
+
+ 237              Posterior_Estimation  = Priori_Estimation + KalmanGain * (ACC_Angle - Priori_Estimation );
+ 238            if (Posterior_Estimation != Posterior_Estimation)
+ 239            {
+ 240              Posterior_Estimation = 0;
+ 241            }
+ 242            
+ 243              // 3.更新后验协方差  : P(k|k) =（I-K(k)*H(k)）*P(k|k-1) 
+ 244              Posterior_Convariance = (float)sqrt(( 1 - KalmanGain ) * Priori_Convariance * Priori_Convariance );
+ 245            if (Posterior_Convariance != Posterior_Convariance)
+ 246            {
+ 247              Posterior_Convariance = 0;
+ 248            }
+ 249            
+ 250              //得到最终角度 
+ 251              Attitude_Angle.Y = Posterior_Estimation;
+ 252            
+ 253            if (Attitude_Angle.Y != Attitude_Angle.Y)
+ 254            {
+ 255              Attitude_Angle.Y = 1;
+ 256            }
+ 257          }
+ 258          */
+ 259          /*
+ 260           * 函数名：Get_Attitude
+ 261           * 描述  ：姿态解算
+ 262           * 输入  ：无
+ 263           * 输出  ：无
+ 264           * 调用  ：外部调用
+ 265           */
+ 266          void Get_Attitude(void) // 姿态解算
+ 267          {
+ 268   1        IMUupdate(GYRO_Real.X * Gyro_Gr * GyroRatio,
+ 269   1              GYRO_Real.Y * Gyro_Gr * GyroRatio,
+ 270   1              GYRO_Real.Z * Gyro_Gr * GyroRatio,
+ 271   1              ACC_Real.X * AcceRatio,
+ 272   1              ACC_Real.Y * AcceRatio,
+ 273   1              ACC_Real.Z * AcceRatio); // 姿态解算出欧拉角
+ 274   1      }
+ 275          
+ 276          //===============================四元素============================================
+ 277          #define Kp 1.6f              //10.0f              // proportional gain governs rate of convergence to accelerom
+             -eter/magnetometer
+ 278          #define Ki 0.001f            //1.2f // //0.008f   // integral gain governs rate of convergence of gyroscope bi
+             -ases
+ 279          #define halfT 0.005f           // half the sample period采样周期的一半
+ 280          float q0 = 1, q1 = 0, q2 = 0, q3 = 0;  // quaternion elements representing the estimated orientation
+ 281          float exInt = 0, eyInt = 0, ezInt = 0; // scaled integral error
+ 282          /*
+ 283           * 函数名：IMUupdate
+ 284           * 描述  ：四元素解算欧拉角
+ 285           * 输入  ：陀螺仪 加速度计
+ 286           * 输出  ：无
+ 287           * 调用  ：内部调用
+ 288           */
+ 289          void IMUupdate(float gx, float gy, float gz, float ax, float ay, float az)
+ 290          {
+ 291   1        float norm;
+ 292   1        float vx, vy, vz;
+ 293   1        float ex, ey, ez;
+ 294   1      
+ 295   1        // 先把这些用得到的值算好
+ 296   1        float q0q0 = q0 * q0;
+C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 6   
+
+ 297   1        float q0q1 = q0 * q1;
+ 298   1        float q0q2 = q0 * q2;
+ 299   1        float q1q1 = q1 * q1;
+ 300   1        float q1q3 = q1 * q3;
+ 301   1        float q2q2 = q2 * q2;
+ 302   1        float q2q3 = q2 * q3;
+ 303   1        float q3q3 = q3 * q3;
+ 304   1      
+ 305   1        if (ax * ay * az == 0)
+ 306   1        {
+ 307   2          return;
+ 308   2        }
+ 309   1      
+ 310   1        norm = sqrt(ax * ax + ay * ay + az * az); // acc数据归一化
+ 311   1        ax = ax / norm;
+ 312   1        ay = ay / norm;
+ 313   1        az = az / norm;
+ 314   1      
+ 315   1        // estimated direction of gravity and flux (v and w)  估计重力方向和流量/变迁
+ 316   1        vx = 2 * (q1q3 - q0q2); // 四元素中xyz的表示
+ 317   1        vy = 2 * (q0q1 + q2q3);
+ 318   1        vz = q0q0 - q1q1 - q2q2 + q3q3;
+ 319   1      
+ 320   1        // error is sum of cross product between reference direction of fields and direction measured by sensors
+ 321   1        ex = (ay * vz - az * vy); // 向量外积在相减得到差分就是误差
+ 322   1        ey = (az * vx - ax * vz);
+ 323   1        ez = (ax * vy - ay * vx);
+ 324   1      
+ 325   1        exInt = exInt + ex * Ki; // 对误差进行积分
+ 326   1        eyInt = eyInt + ey * Ki;
+ 327   1        ezInt = ezInt + ez * Ki;
+ 328   1      
+ 329   1        // adjusted gyroscope measurements
+ 330   1        gx = gx + Kp * ex + exInt; // 将误差PI后补偿到陀螺仪，即补偿零点漂移
+ 331   1        gy = gy + Kp * ey + eyInt;
+ 332   1        gz = gz + Kp * ez + ezInt; // 这里的gz由于没有观测者进行矫正会产生漂移，表现出来�
+             -��就是积分自增或自减
+ 333   1      
+ 334   1        // integrate quaternion rate and normalise  // 四元素的微分方程
+ 335   1        q0 = q0 + (-q1 * gx - q2 * gy - q3 * gz) * halfT;
+ 336   1        q1 = q1 + (q0 * gx + q2 * gz - q3 * gy) * halfT;
+ 337   1        q2 = q2 + (q0 * gy - q1 * gz + q3 * gx) * halfT;
+ 338   1        q3 = q3 + (q0 * gz + q1 * gy - q2 * gx) * halfT;
+ 339   1      
+ 340   1        // normalise quaternion
+ 341   1        norm = sqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+ 342   1        q0 = q0 / norm;
+ 343   1        q1 = q1 / norm;
+ 344   1        q2 = q2 / norm;
+ 345   1        q3 = q3 / norm;
+ 346   1      
+ 347   1        Attitude_Angle.Y = asin(-2 * q1 * q3 + 2 * q0 * q2) * 57.3;                 // pitch
+ 348   1        Attitude_Angle.X = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2 * q2 + 1) * 57.3; // roll
+ 349   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   5340    ----
+   CONSTANT SIZE    =     24    ----
+   XDATA SIZE       =    101     143
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 7   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,123 @@
+C51 COMPILER V9.01   SEEKFREE_WIRELESS                                                     07/03/2020 15:17:26 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE SEEKFREE_WIRELESS
+OBJECT MODULE PLACED IN .\Out_File\SEEKFREE_WIRELESS.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\Libraries\seekfree_peripheral\SEEKFREE_WIRELESS.c LARGE OPTIMIZE(8
+                    -,SPEED) BROWSE INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;.
+                    -.\USER\inc;..\USER\src;..\CODE) DEBUG OBJECTEXTEND PRINT(.\Out_File\SEEKFREE_WIRELESS.lst) TABS(2) OBJECT(.\Out_File\SEE
+                    -KFREE_WIRELESS.obj)
+
+line level    source
+
+   1          /*********************************************************************************************************
+             -************
+   2           * COPYRIGHT NOTICE
+   3           * Copyright (c) 2018,Öð·É¿Æ¼¼
+   4           * All rights reserved.
+   5           * ¼¼ÊõÌÖÂÛQQÈº£ºÒ»Èº£º179029047(ÒÑÂú)  ¶þÈº£º244861897
+   6           *
+   7           * ÒÔÏÂËùÓÐÄÚÈÝ°æÈ¨¾ùÊôÖð·É¿Æ¼¼ËùÓÐ£¬Î´¾­ÔÊÐí²»µÃÓÃÓÚÉÌÒµÓÃÍ¾£¬
+   8           * »¶Ó­¸÷Î»Ê¹ÓÃ²¢´«²¥±¾³ÌÐò£¬ÐÞ¸ÄÄÚÈÝÊ±±ØÐë±£ÁôÖð·É¿Æ¼¼µÄ°æÈ¨ÉùÃ÷¡£
+   9           *
+  10           * @file          Öð·É¿Æ¼¼ÎÞÏß×ª´®¿ÚÄ£¿é
+  11           * @company       ³É¶¼Öð·É¿Æ¼¼ÓÐÏÞ¹«Ë¾
+  12           * @author        Öð·É¿Æ¼¼(QQ3184284598)
+  13           * @version       ²é¿´docÄÚversionÎÄ¼þ °æ±¾ËµÃ÷
+  14           * @Software    IAR 8.3 or MDK 5.24
+  15           * @Taobao      https://seekfree.taobao.com/
+  16           * @date          2019-03-27
+  17           * @note    
+  18                    ½ÓÏß¶¨Òå£º
+  19                    ------------------------------------ 
+  20                        ÎÞÏß×ª´®¿Ú       µ¥Æ¬»ú                        
+  21                        RX              ²é¿´SEEKFREE_WIRELESS.hÎÄ¼þÖÐµÄWIRELESS_UART_TXºê¶¨Òå
+  22                        TX              ²é¿´SEEKFREE_WIRELESS.hÎÄ¼þÖÐµÄWIRELESS_UART_RXºê¶¨Òå
+  23                        RTS             ²é¿´SEEKFREE_WIRELESS.hÎÄ¼þÖÐµÄRTS_PINºê¶¨Òå
+  24                        CMD             ²é¿´SEEKFREE_WIRELESS.hÎÄ¼þÖÐµÄCMD_PINºê¶¨Òå
+  25                    ------------------------------------ 
+  26           *********************************************************************************************************
+             -***********/
+  27          
+  28          
+  29          #include "SEEKFREE_WIRELESS.h"
+  30          #include "zf_uart.h"
+  31          
+  32          
+  33          
+  34          
+  35          
+  36          
+  37          //--------------------------------------------------------------------------------------------------------
+             ------------
+  38          //  @brief      ÎÞÏß×ª´®¿ÚÄ£¿é³õÊ¼»¯
+  39          //  @param      NULL
+  40          //  @return     void          
+  41          //  @since      v1.0
+  42          //  Sample usage: 
+  43          //  @note       
+  44          //--------------------------------------------------------------------------------------------------------
+             ------------
+  45          void seekfree_wireless_init(void)
+  46          {
+  47   1          //±¾º¯ÊýÊ¹ÓÃµÄ²¨ÌØÂÊÎª115200£¬ÎªÎÞÏß×ª´®¿ÚÄ£¿éµÄÄ¬ÈÏ²¨ÌØÂÊ£¬ÈçÐèÆäËû²¨ÌØÂÊÇë×ÔÐÐÅäÖÃÄ£¿é²¢ÐÞ¸Ä´®¿ÚµÄ²¨
+             -ÌØÂÊ
+C51 COMPILER V9.01   SEEKFREE_WIRELESS                                                     07/03/2020 15:17:26 PAGE 2   
+
+  48   1      
+  49   1        uart_init(WIRELESS_UART, WIRELESS_UART_RX_PIN, WIRELESS_UART_TX_PIN, WIRELESS_UART_BAUD, WIRELESS_UART_TI
+             -M);  //³õÊ¼»¯´®¿Ú    
+  50   1           
+  51   1          
+  52   1      }
+  53          
+  54          //--------------------------------------------------------------------------------------------------------
+             ------------
+  55          //  @brief      ÎÞÏß×ª´®¿ÚÄ£¿é ·¢ËÍº¯Êý
+  56          //  @param      buff        ÐèÒª·¢ËÍµÄÊý¾ÝµØÖ·
+  57          //  @param      len         ·¢ËÍ³¤¶È
+  58          //  @return     uint32      Ê£ÓàÎ´·¢ËÍµÄ×Ö½ÚÊý   
+  59          //  @since      v1.0
+  60          //  Sample usage: 
+  61          //  @note       
+  62          //--------------------------------------------------------------------------------------------------------
+             ------------
+  63          uint32 seekfree_wireless_send_buff(uint8 *buff, uint32 len)
+  64          {
+  65   1          while(len>30)
+  66   1          {
+  67   2              if(RTS_PIN == 1)  
+  68   2              {
+  69   3                  return len;//Ä£¿éÃ¦,Èç¹ûÔÊÐíµ±Ç°³ÌÐòÊ¹ÓÃwhileµÈ´ý Ôò¿ÉÒÔÊ¹ÓÃºóÃæ×¢ÊÍµÄwhileµÈ´ýÓï¾äÌæ»»±¾ifÓï¾
+             -ä
+  70   3              }
+  71   2              //while(RTS_PIN);  //Èç¹ûRTSÎªµÍµçÆ½£¬Ôò¼ÌÐø·¢ËÍÊý¾Ý
+  72   2              uart_putbuff(WIRELESS_UART, buff, 30);
+  73   2      
+  74   2              buff += 30; //µØÖ·Æ«ÒÆ
+  75   2              len -= 30;//ÊýÁ¿
+  76   2          }
+  77   1          
+  78   1          if(RTS_PIN == 1)  
+  79   1          {
+  80   2              return len;//Ä£¿éÃ¦,Èç¹ûÔÊÐíµ±Ç°³ÌÐòÊ¹ÓÃwhileµÈ´ý Ôò¿ÉÒÔÊ¹ÓÃºóÃæ×¢ÊÍµÄwhileµÈ´ýÓï¾äÌæ»»±¾ifÓï¾ä
+  81   2          }
+  82   1          //while(RTS_PIN);  //Èç¹ûRTSÎªµÍµçÆ½£¬Ôò¼ÌÐø·¢ËÍÊý¾Ý
+  83   1          uart_putbuff(WIRELESS_UART, buff, len);//·¢ËÍ×îºóµÄÊý¾Ý
+  84   1          
+  85   1          return 0;
+  86   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    197    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       7
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

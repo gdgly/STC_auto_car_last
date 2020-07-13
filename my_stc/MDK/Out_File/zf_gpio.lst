@@ -1,0 +1,342 @@
+C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE ZF_GPIO
+OBJECT MODULE PLACED IN .\Out_File\zf_gpio.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\Libraries\seekfree_libraries\zf_gpio.c LARGE OPTIMIZE(8,SPEED) BRO
+                    -WSE INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\USER\inc;
+                    -..\USER\src;..\CODE) DEBUG OBJECTEXTEND PRINT(.\Out_File\zf_gpio.lst) TABS(2) OBJECT(.\Out_File\zf_gpio.obj)
+
+line level    source
+
+   1          /*********************************************************************************************************
+             -************
+   2           * COPYRIGHT NOTICE
+   3           * Copyright (c) 2020,逐飞科技
+   4           * All rights reserved.
+   5           * 技术讨论QQ群：一群：179029047(已满)  二群：244861897(已满)  三群：824575535
+   6           *
+   7           * 以下所有内容版权均属逐飞科技所有，未经允许不得用于商业用途，
+   8           * 欢迎各位使用并传播本程序，修改内容时必须保留逐飞科技的版权声明。
+   9           *
+  10           * @file          gpio
+  11           * @company       成都逐飞科技有限公司
+  12           * @author        逐飞科技(QQ790875685)
+  13           * @version       查看doc内version文件 版本说明
+  14           * @Software    MDK FOR C51 V9.60
+  15           * @Target core   STC8A8K64S4
+  16           * @Taobao      https://seekfree.taobao.com/
+  17           * @date          2020-4-14
+  18           *********************************************************************************************************
+             -***********/
+  19          #include "zf_gpio.h"
+  20          
+  21          #define PxPU_BASE_ADDR  0xFE10 
+  22          
+  23          //--------------------------------------------------------------------------------------------------------
+             ------------
+  24          //  @brief      GPIO设置引脚上拉电阻设置
+  25          //  @param      pin         选择引脚（P0_0-P7_7）
+  26          //  @param      pull        设置上下拉电阻 NOPULL:不设置 PULLUP:上拉
+  27          //  @return     void
+  28          //  Sample usage:           gpio_pull_set(P0_0,NOPULL);       // 设置P0.0引脚没有上下拉电阻
+  29          //--------------------------------------------------------------------------------------------------------
+             ------------
+  30          void gpio_pull_set(PIN_enum pin, PULL_enum pull)
+  31          {
+  32   1        if(PULLUP == pull)
+  33   1        {
+  34   2          (*(unsigned char volatile xdata *)(PxPU_BASE_ADDR + (pin >> 4))) |= (1 << (pin & 0x0F));
+  35   2        }
+  36   1        else if(NOPULL == pull)
+  37   1        {
+  38   2          (*(unsigned char volatile xdata *)(PxPU_BASE_ADDR + (pin >> 4))) &= ~(1 <<(pin & 0x0F));
+  39   2        }
+  40   1      }
+  41          
+  42          
+  43          
+  44          //--------------------------------------------------------------------------------------------------------
+             ------------
+  45          //  @brief      GPIO设置引脚模式
+  46          //  @param      pin         选择引脚（P0_0-P5_4）
+  47          //  @param      mode        引脚模式 GPIO:准双向口, GPO_PP:推挽输出, GPI_IMPEDANCE:高阻输入, GPI_OD:开漏输
+             -出
+C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 2   
+
+  48          //  @return     void
+  49          //  Sample usage:           gpio_mode(P0_0,GPIO);       // 设置P0.0设置为双向IO
+  50          //--------------------------------------------------------------------------------------------------------
+             ------------
+  51          void gpio_mode(PIN_enum pin, GPIOMODE_enum mode)
+  52          {
+  53   1        if(0x00 == (pin&0xF0))  //P0
+  54   1        {
+  55   2          switch(mode)
+  56   2          {
+  57   3            case GPIO:
+  58   3            {
+  59   4              P0M1 &= ~(1 << (pin & 0xF));
+  60   4              P0M0 &= ~(1 << (pin & 0xF));
+  61   4              break;
+  62   4            }
+  63   3            case GPO_PP:
+  64   3            {
+  65   4              P0M1 &= ~(1 << (pin & 0xF));
+  66   4              P0M0 |=   1 << (pin & 0xF);
+  67   4              break;
+  68   4            }
+  69   3            case GPI_IMPEDANCE:
+  70   3            {
+  71   4              P0M1 |=   1 << (pin & 0xF);
+  72   4              P0M0 &= ~(1 << (pin & 0xF));
+  73   4              break;
+  74   4            }
+  75   3            case GPI_OD:
+  76   3            {
+  77   4              P0M1 |=   1 << (pin & 0xF);
+  78   4              P0M0 |=   1 << (pin & 0xF);
+  79   4              break;
+  80   4            }
+  81   3          }
+  82   2        }
+  83   1        if(0x10 == (pin&0xF0))  //P1
+  84   1        {
+  85   2          switch(mode)
+  86   2          {
+  87   3            case GPIO:
+  88   3            {
+  89   4              P1M1 &= ~(1 << (pin & 0xF));
+  90   4              P1M0 &= ~(1 << (pin & 0xF));
+  91   4              break;
+  92   4            }
+  93   3            case GPO_PP:
+  94   3            {
+  95   4              P1M1 &= ~(1 << (pin & 0xF));
+  96   4              P1M0 |=   1 << (pin & 0xF);
+  97   4              break;
+  98   4            }
+  99   3            case GPI_IMPEDANCE:
+ 100   3            {
+ 101   4              P1M1 |=   1 << (pin & 0xF);
+ 102   4              P1M0 &= ~(1 << (pin & 0xF));
+ 103   4              break;
+ 104   4            }
+ 105   3            case GPI_OD:
+ 106   3            {
+ 107   4              P1M1 |=   1 << (pin & 0xF);
+ 108   4              P1M0 |=   1 << (pin & 0xF);
+C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 3   
+
+ 109   4              break;
+ 110   4            }
+ 111   3          }
+ 112   2        }
+ 113   1        
+ 114   1        if(0x20 == (pin&0xF0))  //P2
+ 115   1        {
+ 116   2          switch(mode)
+ 117   2          {
+ 118   3            case GPIO:
+ 119   3            {
+ 120   4              P2M1 &= ~(1 << (pin & 0xF));
+ 121   4              P2M0 &= ~(1 << (pin & 0xF));
+ 122   4              break;
+ 123   4            }
+ 124   3            case GPO_PP:
+ 125   3            {
+ 126   4              P2M1 &= ~(1 << (pin & 0xF));
+ 127   4              P2M0 |=   1 << (pin & 0xF);
+ 128   4              break;
+ 129   4            }
+ 130   3            case GPI_IMPEDANCE:
+ 131   3            {
+ 132   4              P2M1 |=   1 << (pin & 0xF);
+ 133   4              P2M0 &= ~(1 << (pin & 0xF));
+ 134   4              break;
+ 135   4            }
+ 136   3            case GPI_OD:
+ 137   3            {
+ 138   4              P2M1 |=   1 << (pin & 0xF);
+ 139   4              P2M0 |=   1 << (pin & 0xF);
+ 140   4              break;
+ 141   4            }
+ 142   3          }
+ 143   2        }
+ 144   1        
+ 145   1        if(0x30 == (pin&0xF0))  //P3
+ 146   1        {
+ 147   2          switch(mode)
+ 148   2          {
+ 149   3            case GPIO:
+ 150   3            {
+ 151   4              P3M1 &= ~(1 << (pin & 0xF));
+ 152   4              P3M0 &= ~(1 << (pin & 0xF));
+ 153   4              break;
+ 154   4            }
+ 155   3            case GPO_PP:
+ 156   3            {
+ 157   4              P3M1 &= ~(1 << (pin & 0xF));
+ 158   4              P3M0 |=   1 << (pin & 0xF);
+ 159   4              break;
+ 160   4            }
+ 161   3            case GPI_IMPEDANCE:
+ 162   3            {
+ 163   4              P3M1 |=   1 << (pin & 0xF);
+ 164   4              P3M0 &= ~(1 << (pin & 0xF));
+ 165   4              break;
+ 166   4            }
+ 167   3            case GPI_OD:
+ 168   3            {
+ 169   4              P3M1 |=   1 << (pin & 0xF);
+ 170   4              P3M0 |=   1 << (pin & 0xF);
+C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 4   
+
+ 171   4              break;
+ 172   4            }
+ 173   3          }
+ 174   2        }
+ 175   1        
+ 176   1        if(0x40 == (pin&0xF0))  //P4
+ 177   1        {
+ 178   2          switch(mode)
+ 179   2          {
+ 180   3            case GPIO:
+ 181   3            {
+ 182   4              P4M1 &= ~(1 << (pin & 0xF));
+ 183   4              P4M0 &= ~(1 << (pin & 0xF));
+ 184   4              break;
+ 185   4            }
+ 186   3            case GPO_PP:
+ 187   3            {
+ 188   4              P4M1 &= ~(1 << (pin & 0xF));
+ 189   4              P4M0 |=   1 << (pin & 0xF);
+ 190   4              break;
+ 191   4            }
+ 192   3            case GPI_IMPEDANCE:
+ 193   3            {
+ 194   4              P4M1 |=   1 << (pin & 0xF);
+ 195   4              P4M0 &= ~(1 << (pin & 0xF));
+ 196   4              break;
+ 197   4            }
+ 198   3            case GPI_OD:
+ 199   3            {
+ 200   4              P4M1 |=   1 << (pin & 0xF);
+ 201   4              P4M0 |=   1 << (pin & 0xF);
+ 202   4              break;
+ 203   4            }
+ 204   3          }
+ 205   2        }
+ 206   1        
+ 207   1        if(0x50 == (pin&0xF0))  //P5
+ 208   1        {
+ 209   2          switch(mode)
+ 210   2          {
+ 211   3            case GPIO:
+ 212   3            {
+ 213   4              P5M1 &= ~(1 << (pin & 0xF));
+ 214   4              P5M0 &= ~(1 << (pin & 0xF));
+ 215   4              break;
+ 216   4            }
+ 217   3            case GPO_PP:
+ 218   3            {
+ 219   4              P5M1 &= ~(1 << (pin & 0xF));
+ 220   4              P5M0 |=   1 << (pin & 0xF);
+ 221   4              break;
+ 222   4            }
+ 223   3            case GPI_IMPEDANCE:
+ 224   3            {
+ 225   4              P5M1 |=   1 << (pin & 0xF);
+ 226   4              P5M0 &= ~(1 << (pin & 0xF));
+ 227   4              break;
+ 228   4            }
+ 229   3            case GPI_OD:
+ 230   3            {
+ 231   4              P5M1 |=   1 << (pin & 0xF);
+ 232   4              P5M0 |=   1 << (pin & 0xF);
+C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 5   
+
+ 233   4              break;
+ 234   4            }
+ 235   3          }
+ 236   2        }
+ 237   1        
+ 238   1        if(0x60 == (pin&0xF0))  //P6
+ 239   1        {
+ 240   2          switch(mode)
+ 241   2          {
+ 242   3            case GPIO:
+ 243   3            {
+ 244   4              P6M1 &= ~(1 << (pin & 0xF));
+ 245   4              P6M0 &= ~(1 << (pin & 0xF));
+ 246   4              break;
+ 247   4            }
+ 248   3            case GPO_PP:
+ 249   3            {
+ 250   4              P6M1 &= ~(1 << (pin & 0xF));
+ 251   4              P6M0 |=   1 << (pin & 0xF);
+ 252   4              break;
+ 253   4            }
+ 254   3            case GPI_IMPEDANCE:
+ 255   3            {
+ 256   4              P6M1 |=   1 << (pin & 0xF);
+ 257   4              P6M0 &= ~(1 << (pin & 0xF));
+ 258   4              break;
+ 259   4            }
+ 260   3            case GPI_OD:
+ 261   3            {
+ 262   4              P6M1 |=   1 << (pin & 0xF);
+ 263   4              P6M0 |=   1 << (pin & 0xF);
+ 264   4              break;
+ 265   4            }
+ 266   3          }
+ 267   2        }
+ 268   1        
+ 269   1        if(0x70 == (pin&0xF0))  //P7
+ 270   1        {
+ 271   2          switch(mode)
+ 272   2          {
+ 273   3            case GPIO:
+ 274   3            {
+ 275   4              P7M1 &= ~(1 << (pin & 0xF));
+ 276   4              P7M0 &= ~(1 << (pin & 0xF));
+ 277   4              break;
+ 278   4            }
+ 279   3            case GPO_PP:
+ 280   3            {
+ 281   4              P7M1 &= ~(1 << (pin & 0xF));
+ 282   4              P7M0 |=   1 << (pin & 0xF);
+ 283   4              break;
+ 284   4            }
+ 285   3            case GPI_IMPEDANCE:
+ 286   3            {
+ 287   4              P7M1 |=   1 << (pin & 0xF);
+ 288   4              P7M0 &= ~(1 << (pin & 0xF));
+ 289   4              break;
+ 290   4            }
+ 291   3            case GPI_OD:
+ 292   3            {
+ 293   4              P7M1 |=   1 << (pin & 0xF);
+ 294   4              P7M0 |=   1 << (pin & 0xF);
+C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 6   
+
+ 295   4              break;
+ 296   4            }
+ 297   3          }
+ 298   2        }
+ 299   1      }
+ 300          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    954    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

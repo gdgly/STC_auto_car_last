@@ -1,0 +1,244 @@
+C51 COMPILER V9.01   MYCONTROL                                                             07/03/2020 15:17:28 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MYCONTROL
+OBJECT MODULE PLACED IN .\Out_File\MyControl.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\CODE\MyControl.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\Librarie
+                    -s\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\USER\inc;..\USER\src;..\CODE) DEBU
+                    -G OBJECTEXTEND PRINT(.\Out_File\MyControl.lst) TABS(2) OBJECT(.\Out_File\MyControl.obj)
+
+line level    source
+
+   1          /*
+   2           * @Description  : 
+   3           * @Version      : 
+   4           * @Date         : 2020-06-18 16:24:56
+   5           * @LastEditTime : 2020-06-29 15:33:38
+   6           */
+   7          
+   8          #include "MyControl.h"
+   9          
+  10          uchar Run_Flag = 0;
+  11          uchar Stop_Flag = 1;
+  12          
+  13          int32 MOTOR_Duty_Left = 0;
+  14          int32 MOTOR_Duty_Right = 0;
+  15          int32 MOTOR_Speed_Left = 0;
+  16          int32 MOTOR_Speed_Right = 0;
+  17          int32 MOTOR_Speed_Left_Last = 0;
+  18          int32 MOTOR_Speed_Right_Last = 0;
+  19          int32 MOTOR_Left_Acc = 0;
+  20          int32 MOTOR_Right_Acc = 0;
+  21          
+  22          float SpeedRw, SpeedLw;
+  23          float Speed_dev, Speed_sum, Steer_Radius;
+  24          int Fres = 0; // 动态参数变量
+  25          /******* 电机速度测量 ********/
+  26          void Speed_Measure(void)
+  27          {
+  28   1        static int32 left_data, right_data;
+  29   1        /******* 右电机速度相关控制 ********/
+  30   1        MOTOR_Speed_Right = ctimer_count_read(CTIM0_P34) * 100 * Pulse_CM_coe; //右轮
+  31   1        ctimer_count_clean(CTIM0_P34);
+  32   1        right_data = P35;
+  33   1        if (right_data == 1)
+  34   1          MOTOR_Speed_Right = -MOTOR_Speed_Right;
+  35   1        if (right_data == 0)
+  36   1          MOTOR_Speed_Right = MOTOR_Speed_Right;
+  37   1        MOTOR_Right_Acc = MOTOR_Speed_Right - MOTOR_Speed_Right_Last; // 计算加速度
+  38   1        if (MOTOR_Right_Acc > 100)
+  39   1          MOTOR_Speed_Right += 100;
+  40   1        else if (MOTOR_Right_Acc < -100)
+  41   1          MOTOR_Speed_Right -= 100;
+  42   1        else
+  43   1          MOTOR_Speed_Right = MOTOR_Speed_Right;
+  44   1        MOTOR_Speed_Right = range_protect(MOTOR_Speed_Right, 0, 500); //限幅保护
+  45   1        MOTOR_Speed_Right_Last = MOTOR_Speed_Right;
+  46   1        /******* 右电机速度相关控制结束 ********/
+  47   1        /******* 左电机速度相关控制 ********/
+  48   1        MOTOR_Speed_Left = ctimer_count_read(CTIM3_P04) * 100 * Pulse_CM_coe; //左轮
+  49   1        ctimer_count_clean(CTIM3_P04);
+  50   1        left_data = P53;
+  51   1        if (left_data == 1)
+  52   1          MOTOR_Speed_Left = MOTOR_Speed_Left;
+  53   1        if (left_data == 0)
+C51 COMPILER V9.01   MYCONTROL                                                             07/03/2020 15:17:28 PAGE 2   
+
+  54   1          MOTOR_Speed_Left = -MOTOR_Speed_Left;
+  55   1        MOTOR_Left_Acc = MOTOR_Speed_Left - MOTOR_Speed_Left_Last; // 计算加速度
+  56   1        if (MOTOR_Left_Acc > 100)
+  57   1          MOTOR_Speed_Left += 100;
+  58   1        else if (MOTOR_Left_Acc < -100)
+  59   1          MOTOR_Speed_Left -= 100;
+  60   1        else
+  61   1          MOTOR_Speed_Left = MOTOR_Speed_Left;
+  62   1        MOTOR_Speed_Left = range_protect(MOTOR_Speed_Left, 0, 500); //限幅保护
+  63   1        MOTOR_Speed_Left_Last = MOTOR_Speed_Left;
+  64   1        /*****************转向和直道真实速度计算*****************/
+  65   1        SpeedLw = MOTOR_Speed_Left + BodyR * GYRO_Real.Z * PAI / 180;
+  66   1        SpeedRw = MOTOR_Speed_Right - BodyR * GYRO_Real.Z * PAI / 180;
+  67   1        if (GYRO_Real.Z > 50)
+  68   1        {
+  69   2          Speed_Now = SpeedRw; // 左转，用右边
+  70   2        }
+  71   1        else if (GYRO_Real.Z < -50)
+  72   1        {
+  73   2          Speed_Now = SpeedLw; // 右转，用左边
+  74   2        }
+  75   1        else
+  76   1        {
+  77   2          Speed_Now = (MOTOR_Speed_Right + MOTOR_Speed_Left) / 2; // 不怎么转，用两边
+  78   2        }
+  79   1        if ((Speed_Now - Speed_Now_Last) > 100)
+  80   1          Speed_Now += 100;
+  81   1        else if ((Speed_Now - Speed_Now_Last) < -100)
+  82   1          Speed_Now -= 100;
+  83   1        else
+  84   1          Speed_Now = Speed_Now;
+  85   1        Speed_Now = range_protect(Speed_Now, 0, 500); //限幅保护
+  86   1        Speed_Now_Last = Speed_Now;
+  87   1      
+  88   1        Run_I += Speed_Now; //起跑距离
+  89   1        /**********出环岛距离积分**********/
+  90   1        if (Out_Roundabout_Flag)
+  91   1        {
+  92   2          Out_Roundabout_I += Speed_Now;
+  93   2        }
+  94   1        /**********转向最小速度计算**********/
+  95   1        Speed_Min = Speed_Min * 0.1 + Speed_Now * 0.9;
+  96   1        Speed_Min = range_protect(Speed_Min, 10, 290); //限幅保护
+  97   1        /**********转向参数选择**********/
+  98   1        if (Speed_Min <= Speed_Set * 0.3)
+  99   1          Fres = 0;
+ 100   1        else if (Speed_Min <= Speed_Set * 0.7)
+ 101   1          Fres = 1;
+ 102   1        else if (Speed_Min <= Speed_Set)
+ 103   1          Fres = 2;
+ 104   1        else
+ 105   1          Fres = 3;
+ 106   1      }
+ 107          void AD_LVBO()
+ 108          {
+ 109   1        uint8 i, j;
+ 110   1      #define FILTER_N 5
+ 111   1        float filter_temp, filter_sum_L = 0, filter_sum_LC = 0, filter_sum_R = 0, filter_sum_RC = 0;
+ 112   1        float filter_buf_L[FILTER_N];
+ 113   1        float filter_buf_LC[FILTER_N];
+ 114   1        float filter_buf_R[FILTER_N];
+ 115   1        float filter_buf_RC[FILTER_N];
+C51 COMPILER V9.01   MYCONTROL                                                             07/03/2020 15:17:28 PAGE 3   
+
+ 116   1        for (i = 0; i < FILTER_N; i++)
+ 117   1        {
+ 118   2          filter_buf_L[i] = adc_once(ADC_P00, ADC_12BIT);
+ 119   2          filter_buf_LC[i] = adc_once(ADC_P01, ADC_12BIT);
+ 120   2          filter_buf_R[i] = adc_once(ADC_P03, ADC_12BIT);
+ 121   2          filter_buf_RC[i] = adc_once(ADC_P04, ADC_12BIT);
+ 122   2        }
+ 123   1        // 采样值从小到大排列（冒泡法）
+ 124   1        for (j = 0; j < FILTER_N - 1; j++)
+ 125   1        {
+ 126   2          for (i = 0; i < FILTER_N - 1 - j; i++)
+ 127   2          {
+ 128   3            if (filter_buf_L[i] > filter_buf_L[i + 1])
+ 129   3            {
+ 130   4              filter_temp = filter_buf_L[i];
+ 131   4              filter_buf_L[i] = filter_buf_L[i + 1];
+ 132   4              filter_buf_L[i + 1] = filter_temp;
+ 133   4            }
+ 134   3          }
+ 135   2        }
+ 136   1        for (j = 0; j < FILTER_N - 1; j++)
+ 137   1        {
+ 138   2          for (i = 0; i < FILTER_N - 1 - j; i++)
+ 139   2          {
+ 140   3            if (filter_buf_LC[i] > filter_buf_LC[i + 1])
+ 141   3            {
+ 142   4              filter_temp = filter_buf_LC[i];
+ 143   4              filter_buf_LC[i] = filter_buf_LC[i + 1];
+ 144   4              filter_buf_LC[i + 1] = filter_temp;
+ 145   4            }
+ 146   3          }
+ 147   2        }
+ 148   1        for (j = 0; j < FILTER_N - 1; j++)
+ 149   1        {
+ 150   2          for (i = 0; i < FILTER_N - 1 - j; i++)
+ 151   2          {
+ 152   3            if (filter_buf_R[i] > filter_buf_R[i + 1])
+ 153   3            {
+ 154   4              filter_temp = filter_buf_R[i];
+ 155   4              filter_buf_R[i] = filter_buf_R[i + 1];
+ 156   4              filter_buf_R[i + 1] = filter_temp;
+ 157   4            }
+ 158   3          }
+ 159   2        }
+ 160   1        for (j = 0; j < FILTER_N - 1; j++)
+ 161   1        {
+ 162   2          for (i = 0; i < FILTER_N - 1 - j; i++)
+ 163   2          {
+ 164   3            if (filter_buf_RC[i] > filter_buf_RC[i + 1])
+ 165   3            {
+ 166   4              filter_temp = filter_buf_RC[i];
+ 167   4              filter_buf_RC[i] = filter_buf_RC[i + 1];
+ 168   4              filter_buf_RC[i + 1] = filter_temp;
+ 169   4            }
+ 170   3          }
+ 171   2        }
+ 172   1        // 去除最大最小极值后求平均
+ 173   1        for (i = 1; i < FILTER_N - 1; i++)
+ 174   1        {
+ 175   2          filter_sum_L += filter_buf_L[i];
+ 176   2          filter_sum_LC += filter_buf_LC[i];
+ 177   2          filter_sum_R += filter_buf_R[i];
+C51 COMPILER V9.01   MYCONTROL                                                             07/03/2020 15:17:28 PAGE 4   
+
+ 178   2          filter_sum_RC += filter_buf_RC[i];
+ 179   2        }
+ 180   1        LAD = filter_sum_L / (FILTER_N - 2);
+ 181   1        LADC = filter_sum_LC / (FILTER_N - 2);
+ 182   1        RAD = filter_sum_R / (FILTER_N - 2);
+ 183   1        RADC = filter_sum_RC / (FILTER_N - 2);
+ 184   1      }
+ 185          
+ 186          void MOTOR_Control(int32 LDuty, int32 RDuty)
+ 187          {
+ 188   1      
+ 189   1        if (LDuty >= 0)
+ 190   1        {
+ 191   2          LDuty = range_protect(LDuty, 0, MOTOR_MAX); // 限幅保护
+ 192   2          pwm_duty(MOTOR3_PWM, 0);                    // 占空比最大75%！！！
+ 193   2          pwm_duty(MOTOR4_PWM, LDuty);                // 占空比最大75%！！！
+ 194   2        }
+ 195   1        else
+ 196   1        {
+ 197   2          LDuty = range_protect(-LDuty, 0, MOTOR_MAX); // 限幅保护
+ 198   2          pwm_duty(MOTOR4_PWM, 0);                     // 占空比最大75%！！！
+ 199   2          pwm_duty(MOTOR3_PWM, -LDuty);                 // 占空比最大75%！！！
+ 200   2        }
+ 201   1        if (RDuty >= 0)
+ 202   1        {
+ 203   2          RDuty = range_protect(RDuty, 0, MOTOR_MAX); // 限幅保护
+ 204   2          pwm_duty(MOTOR2_PWM, 0);                    // 占空比最大75%！！！
+ 205   2          pwm_duty(MOTOR1_PWM, RDuty);                // 占空比最大75%！！！
+ 206   2        }
+ 207   1        else
+ 208   1        {
+ 209   2          RDuty = range_protect(-RDuty, 0, MOTOR_MAX); // 限幅保护
+ 210   2          pwm_duty(MOTOR1_PWM, 0);                     // 占空比最大75%！！！
+ 211   2          pwm_duty(MOTOR2_PWM, -RDuty);                 // 占空比最大75%！！！
+ 212   2        }
+ 213   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3531    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     64     110
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

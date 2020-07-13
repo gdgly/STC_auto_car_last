@@ -1,0 +1,442 @@
+C51 COMPILER V9.01   MYDEBUG                                                               07/03/2020 15:17:30 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MYDEBUG
+OBJECT MODULE PLACED IN .\Out_File\MyDebug.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\CODE\MyDebug.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\Libraries\
+                    -libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\USER\inc;..\USER\src;..\CODE) DEBUG 
+                    -OBJECTEXTEND PRINT(.\Out_File\MyDebug.lst) TABS(2) OBJECT(.\Out_File\MyDebug.obj)
+
+line level    source
+
+   1          /*
+   2           * @Description  : 
+   3           * @Version      : 
+   4           * @Date         : 2020-06-22 16:48:49
+   5           * @LastEditTime : 2020-06-29 17:59:09
+   6           */ 
+   7          #include "MyDebug.h"
+   8          //上位机相关定义
+   9          float Variable[16];
+  10          //按键屏幕相关定义
+  11          uint8 KEY_UP,KEY_DOWN,KEY_LEFT,KEY_RIGHT,KEY_CEL,KEY_SURE;
+  12          uint8 Page_Index=3,Para_Index=1,Para_Checked=0,Para_Choice=0;
+  13          uint8 Para_Index_Limit=7;   //一页最多有7个变量序号
+  14          uint8 Display_Edge=1;
+  15          uint8 I_MAD = 0,MAD = 0;
+  16          //对应不同的页面
+  17          char Para_Name0[7][12]={"angle\0","Eangle\0","T_anglemin\0","T_anglemax\0","Speed_P\0","TURN_lim\0"};
+  18          float *Control_Para0[6]={&Attitude_Angle.Y,&Zero_Angle,&Target_Angle_min,&Target_Angle_max,&MOTOR[0],&TURN
+             -_lim};
+  19          char Para_Name1[6][12]={"I_LAD\0","I_LADC\0","I_MAD\0","I_RADC\0","I_RAD\0","O_I\0"};
+  20          int *Control_Para1[6]={&I_LAD,&I_LADC,&I_MAD,&I_RADC,&I_RAD,&O_I};
+  21          ///////////////////////////////////////////////////////////////////////
+  22          char Car_Set_Name0[6][12]={"Speed_Set\0","Speed_L\0","Speed_R\0","System_OK\0","Run_Flag\0","Stop_Flag\0"}
+             -;
+  23          char Car_Set_Name1[6][12]={"LAD\0","LADC\0","MAD\0","RADC\0","RAD\0"};
+  24          float Step[4]={1.000,10.00,100.0,1000};   //默认调节步长为0.01
+  25          unsigned char Step_Index=2;
+  26          /**************上位机函数************/
+  27          void my_putchar(char temp)
+  28          {
+  29   1        uart_putchar(UART_3,temp); //根据实际的串口号来修改
+  30   1      }
+  31          /*用来通知上位机新的一组数据开始，要保存数据必须发送它*/
+  32          void Send_Begin()
+  33          {
+  34   1        my_putchar(0x55);
+  35   1        my_putchar(0xaa);
+  36   1        my_putchar(0x11);
+  37   1      }
+  38          void Testdata_generate()
+  39          {
+  40   1        Variable[0]=LAD;
+  41   1        Variable[1]=LADC;
+  42   1        Variable[2]=MAD;
+  43   1        Variable[3]=RADC;
+  44   1        Variable[4]=RAD;
+  45   1        Variable[5]=In_Roundabout_Flag;
+  46   1        Variable[6]=Out_Roundabout_Flag;
+  47   1        Variable[7]=In_Out_Roundabout_ture_I;
+  48   1        Variable[8]=Attitude_Angle.Z;
+  49   1      }
+  50          void Send_Variable()
+  51          {
+C51 COMPILER V9.01   MYDEBUG                                                               07/03/2020 15:17:30 PAGE 2   
+
+  52   1        uint8 i=0,ch=0;
+  53   1        float temp=0;
+  54   1        uint8 Variable_num=9;
+  55   1        my_putchar(0x55);
+  56   1        my_putchar(0xaa);
+  57   1        my_putchar(0xff);
+  58   1        my_putchar(0x01);
+  59   1        my_putchar(Variable_num);
+  60   1       for(i=0;i<Variable_num;i++)
+  61   1        {
+  62   2          temp=Variable[i];
+  63   2          ch=BYTE0(temp);
+  64   2            my_putchar(ch);
+  65   2          ch=BYTE1(temp);
+  66   2            my_putchar(ch);
+  67   2          ch=BYTE2(temp);
+  68   2            my_putchar(ch);
+  69   2          ch=BYTE3(temp);
+  70   2            my_putchar(ch);
+  71   2        }
+  72   1           my_putchar(0x01);
+  73   1      }
+  74          /**************屏幕显示************/
+  75          void OLED_Draw_UI()  //画出界面
+  76          { 
+  77   1        uint8 i;
+  78   1      
+  79   1           OLED_P6x8Str(0,0,"Voltage=");                          //显示电池电压
+  80   1           OLED_PrintValueF(48, 0,Voltage,3);                     
+  81   1           OLED_PrintValueF(72, 0,Step[Step_Index],4);            //显示调节步进值
+  82   1           if((Page_Index!=3)&&Para_Index==7)
+  83   1           {
+  84   2              reverse=1; 
+  85   2               OLED_P6x8Str(110,0,"BYS");
+  86   2               OLED_P6x8Str(110,1,"NO1");
+  87   2               OLED_P6x8Str(110,2,"GHC");
+  88   2               OLED_P6x8Str(110,3,"TYB");
+  89   2               OLED_P6x8Str(110,4,"Y S");
+  90   2              reverse=0;
+  91   2           }
+  92   1           else  
+  93   1           {
+  94   2               OLED_P6x8Str(110,0,"BYS");
+  95   2               OLED_P6x8Str(110,1,"NO1");
+  96   2               OLED_P6x8Str(110,2,"GHC");
+  97   2               OLED_P6x8Str(110,3,"TYB");
+  98   2               OLED_P6x8Str(110,4,"Y S");
+  99   2           }
+ 100   1           OLED_Set_Pos(122,7);
+ 101   1           OLED_P6x8Char(Page_Index+48);                         //写出页面序号
+ 102   1      
+ 103   1        /////////////////////////////////////////////////////////第0页  发车调试
+ 104   1        if(Page_Index==0)                
+ 105   1        {
+ 106   2          for(i=0;i<6;i++)
+ 107   2          {
+ 108   3            if(i==Para_Index&&Para_Choice==true&&Para_Checked==false)
+ 109   3            {
+ 110   4             reverse=1;
+ 111   4             OLED_P6x8Str(0,i+1,Para_Name0[i]);   //将参量名反转显示
+ 112   4             reverse=0;
+ 113   4            }
+C51 COMPILER V9.01   MYDEBUG                                                               07/03/2020 15:17:30 PAGE 3   
+
+ 114   3            else OLED_P6x8Str(0,i+1,Para_Name0[i]);
+ 115   3      
+ 116   3            if(i==(Para_Index)&&Para_Checked)
+ 117   3            {
+ 118   4              reverse=1;
+ 119   4              OLED_PrintValueF(72, i+1,*Control_Para0[i],4);
+ 120   4              reverse=0;
+ 121   4            }
+ 122   3            else  OLED_PrintValueF(72, i+1,*Control_Para0[i],4);
+ 123   3            
+ 124   3            OLED_Set_Pos(116,i+1);
+ 125   3      
+ 126   3          }
+ 127   2        }
+ 128   1          /////////////////////////////////////////////////////////第1页  发车调试
+ 129   1        if(Page_Index==1)                
+ 130   1        {
+ 131   2          for(i=0;i<5;i++)
+ 132   2          {
+ 133   3            if(i==Para_Index&&Para_Choice==true&&Para_Checked==false)
+ 134   3            {
+ 135   4             reverse=1;
+ 136   4             OLED_P6x8Str(0,i+1,Para_Name1[i]);   //将参量名反转显示
+ 137   4             reverse=0;
+ 138   4            }
+ 139   3            else OLED_P6x8Str(0,i+1,Para_Name1[i]);
+ 140   3      
+ 141   3            if(i==(Para_Index)&&Para_Checked)
+ 142   3            {
+ 143   4              reverse=1;
+ 144   4              OLED_PrintValueF(72, i+1,*Control_Para1[i],4);
+ 145   4              reverse=0;
+ 146   4            }
+ 147   3            else  OLED_PrintValueF(72, i+1,*Control_Para1[i],4);
+ 148   3            
+ 149   3            OLED_Set_Pos(116,i+1);
+ 150   3      
+ 151   3          }
+ 152   2        }
+ 153   1      
+ 154   1        /////////////////////////////////////////////////////////第3页   查看车身信息
+ 155   1        else if(Page_Index==2)
+ 156   1        {   
+ 157   2          for(i=0;i<6;i++)
+ 158   2          {
+ 159   3            if(i==Para_Index&&Para_Choice==true&&Para_Checked==false)
+ 160   3            {
+ 161   4             reverse=1;
+ 162   4             OLED_P6x8Str(0,i+1,Car_Set_Name0[i]);   //将查看量名反转显示
+ 163   4             reverse=0;
+ 164   4            }
+ 165   3            else OLED_P6x8Str(0,i+1,Car_Set_Name0[i]);
+ 166   3      
+ 167   3            OLED_Set_Pos(116,i+1);
+ 168   3        
+ 169   3          }  
+ 170   2           //参数的反转显示
+ 171   2            if((0==Para_Index)&&Para_Checked)    //查看0    设定速度
+ 172   2            {
+ 173   3              reverse=1;
+ 174   3              OLED_PrintValueF(72, 1,Speed_Set,4);
+ 175   3              reverse=0;
+C51 COMPILER V9.01   MYDEBUG                                                               07/03/2020 15:17:30 PAGE 4   
+
+ 176   3            }
+ 177   2            else    OLED_PrintValueF(72,1,Speed_Set,4);
+ 178   2          
+ 179   2            if((1==Para_Index)&&Para_Checked)    //查看1    左编码器
+ 180   2            {
+ 181   3              reverse=1;
+ 182   3              OLED_PrintValueF(72, 2,MOTOR_Speed_Left,4);
+ 183   3              reverse=0;
+ 184   3            }
+ 185   2            else    OLED_PrintValueF(72,2,MOTOR_Speed_Left,4);
+ 186   2            
+ 187   2            if((2==Para_Index)&&Para_Checked)    //查看2    右编码器
+ 188   2            {
+ 189   3              reverse=1;
+ 190   3              OLED_PrintValueF(72, 3,MOTOR_Speed_Right,4);
+ 191   3              reverse=0;
+ 192   3            }
+ 193   2            else    OLED_PrintValueF(72,3,MOTOR_Speed_Right,4);
+ 194   2            if((3==Para_Index)&&Para_Checked)    //查看3    系统初始化
+ 195   2            {
+ 196   3              reverse=1;
+ 197   3              OLED_PrintValueF(72, 4,System_OK,4);
+ 198   3              reverse=0;
+ 199   3            }
+ 200   2            else    OLED_PrintValueF(72,4,System_OK,4);
+ 201   2            
+ 202   2            if((4==Para_Index)&&Para_Checked)    //查看4    开跑标志
+ 203   2            {
+ 204   3              reverse=1;
+ 205   3              OLED_PrintValueF(72, 5,Run_Flag,4);
+ 206   3              reverse=0;
+ 207   3            }
+ 208   2            else    OLED_PrintValueF(72,5,Run_Flag,4);
+ 209   2            
+ 210   2            if((5==Para_Index)&&Para_Checked)    //查看5    停车标志
+ 211   2            {
+ 212   3              reverse=1;
+ 213   3              OLED_PrintValueF(72, 6,Stop_Flag,4);
+ 214   3              reverse=0;
+ 215   3            }
+ 216   2            else    OLED_PrintValueF(72,6,Stop_Flag,4);
+ 217   2            
+ 218   2        }
+ 219   1          /////////////////////////////////////////////////////////第4页 测场地电感值
+ 220   1        else if(Page_Index==3)
+ 221   1        {
+ 222   2          OLED_P6x8Str(0,1,"LAD");
+ 223   2          OLED_PrintValueF(72,1,LAD,3);
+ 224   2          OLED_P6x8Str(0,2,"LADC");
+ 225   2          OLED_PrintValueF(72, 2,LADC,3);
+ 226   2          OLED_P6x8Str(0,3,"MAD");
+ 227   2          OLED_PrintValueF(72, 3,MAD,3);
+ 228   2          OLED_P6x8Str(0,4,"RADC");
+ 229   2          OLED_PrintValueF(72, 4,RADC,4);
+ 230   2          OLED_P6x8Str(0,5,"RAD");
+ 231   2          OLED_PrintValueF(72, 5,RAD,4);
+ 232   2        } 
+ 233   1      }
+ 234          /**************按键选择函数************/
+ 235          void Check_BottonPress()
+ 236          {   //按键读值
+ 237   1        KEY_UP    = P40;
+C51 COMPILER V9.01   MYDEBUG                                                               07/03/2020 15:17:30 PAGE 5   
+
+ 238   1        KEY_DOWN  = P41;    
+ 239   1        KEY_LEFT  = P42;
+ 240   1        KEY_RIGHT = P43;
+ 241   1        KEY_CEL   = P44;
+ 242   1        KEY_SURE  = P45;
+ 243   1         //确定键
+ 244   1         if(KEY_SURE==0) 
+ 245   1         {
+ 246   2           //去抖
+ 247   2            delay_ms(10);
+ 248   2            if(KEY_SURE==0)
+ 249   2           {    
+ 250   3             if(Para_Index==7) 
+ 251   3             { 
+ 252   4               Para_Index=0; 
+ 253   4             }
+ 254   3             else
+ 255   3             {
+ 256   4              if(Para_Choice==false)  Para_Choice=true;  //  选择参量   
+ 257   4              else
+ 258   4             {
+ 259   5               if(Para_Checked==false) Para_Checked=true;
+ 260   5               else Para_Checked=false;       
+ 261   5              }
+ 262   4             }
+ 263   3            }
+ 264   2            while(KEY_SURE==1); //直到按键松开再运行
+ 265   2         }
+ 266   1         //取消键
+ 267   1           if(KEY_CEL==0)
+ 268   1         {
+ 269   2            //去抖
+ 270   2            delay_ms(10);
+ 271   2            if(KEY_CEL==0)
+ 272   2            {    
+ 273   3             if(Para_Choice==true) Para_Choice=false; //不选择参量
+ 274   3             if(Para_Checked==true)Para_Checked=false;
+ 275   3             if(Page_Index==6)
+ 276   3             {
+ 277   4               if(Display_Edge) Display_Edge=0;
+ 278   4               else Display_Edge=1;
+ 279   4             }
+ 280   3            }
+ 281   2            while(KEY_CEL==1);  //直到按键松开再运行
+ 282   2         } 
+ 283   1         //向左键
+ 284   1           if(KEY_LEFT==0)
+ 285   1         {
+ 286   2            //去抖
+ 287   2            delay_ms(10);
+ 288   2            if(KEY_LEFT==0)
+ 289   2            {
+ 290   3              if(Para_Checked) 
+ 291   3              {
+ 292   4                if(Step_Index==4) 
+ 293   4                Step_Index=4;   //最大的步长为1000
+ 294   4                else Step_Index++;
+ 295   4              }
+ 296   3              else 
+ 297   3              { 
+ 298   4                Para_Index=0;
+ 299   4                if(Page_Index==0) Page_Index=3; //当参数没被选中的时候，按左右键翻页
+C51 COMPILER V9.01   MYDEBUG                                                               07/03/2020 15:17:30 PAGE 6   
+
+ 300   4                else Page_Index--;
+ 301   4                OLED_Fill(0);//清屏 
+ 302   4              }
+ 303   3            }
+ 304   2            while(KEY_LEFT==1);//直到按键松开再运行
+ 305   2         } 
+ 306   1         //向右键
+ 307   1           if(KEY_RIGHT==0)
+ 308   1         {
+ 309   2            //去抖
+ 310   2            delay_ms(10);
+ 311   2            if(KEY_RIGHT==0)
+ 312   2            {
+ 313   3              if(Para_Checked) 
+ 314   3              {
+ 315   4                if(Step_Index==0) 
+ 316   4                 Step_Index=0;//最小的步长为0.01
+ 317   4                else
+ 318   4                {
+ 319   5                  Step_Index--;
+ 320   5                }
+ 321   4              }
+ 322   3              else 
+ 323   3              { 
+ 324   4                Para_Index=0;
+ 325   4                if(Page_Index==3) Page_Index=0;
+ 326   4                else Page_Index++;
+ 327   4               OLED_Fill(0);//清屏 
+ 328   4              }
+ 329   3            }
+ 330   2            while(KEY_RIGHT==1);      //直到按键松开再运行
+ 331   2         }
+ 332   1         //向上键
+ 333   1           if(KEY_UP==0)
+ 334   1         {
+ 335   2            delay_ms(10);
+ 336   2            if(KEY_UP==0)
+ 337   2            {
+ 338   3              if(Para_Choice==true)
+ 339   3              {
+ 340   4                if(Para_Checked==false)
+ 341   4                {
+ 342   5                 if(Para_Index==0) Para_Index=Para_Index_Limit;
+ 343   5                 else Para_Index-=1;
+ 344   5                }
+ 345   4                else
+ 346   4                {
+ 347   5                    if(Page_Index==0&&Para_Index<=6)                    //修改第0页的参数
+ 348   5                  {
+ 349   6                    *Control_Para0[Para_Index]+=Step[Step_Index];
+ 350   6                  }
+ 351   5                  
+ 352   5                    if(Page_Index==1&&Para_Index<=6)                    //修改第1页的参数
+ 353   5                  {
+ 354   6                    *Control_Para1[Para_Index]+=Step[Step_Index];
+ 355   6                  }
+ 356   5           
+ 357   5                    if(Page_Index==2&&Para_Index<=6)                    //修改第3页的参数
+ 358   5                  {
+ 359   6                    if(Para_Index==0) Speed_Set+=(int)Step[Step_Index];  //设定速度 
+ 360   6                  }
+ 361   5                    
+C51 COMPILER V9.01   MYDEBUG                                                               07/03/2020 15:17:30 PAGE 7   
+
+ 362   5                }
+ 363   4              }
+ 364   3            }  
+ 365   2            while(KEY_UP==1);//直到按键松开再运行  
+ 366   2         }
+ 367   1         //向下键
+ 368   1           if(KEY_DOWN==0)
+ 369   1         {
+ 370   2            delay_ms(10);
+ 371   2            if(KEY_DOWN==0)
+ 372   2            {
+ 373   3             if(Para_Choice==true)
+ 374   3              {
+ 375   4                if(Para_Checked==false)
+ 376   4                {             
+ 377   5                  if(Para_Index==Para_Index_Limit)Para_Index=0;   //防止序号超出范围
+ 378   5                  else  Para_Index+=1; 
+ 379   5                }
+ 380   4                else
+ 381   4                {
+ 382   5                    if(Page_Index==0&&Para_Index<=6)                    //修改第0页的参数
+ 383   5                  {
+ 384   6                    *Control_Para0[Para_Index]-=Step[Step_Index];
+ 385   6                  }
+ 386   5                  
+ 387   5                    if(Page_Index==1&&Para_Index<=6)                    //修改第1页的参数
+ 388   5                  {
+ 389   6                    *Control_Para1[Para_Index]-=Step[Step_Index];
+ 390   6                  }
+ 391   5                  
+ 392   5                    if(Page_Index==2&&Para_Index<=6)                    //修改第3页的参数
+ 393   5                  {
+ 394   6                    if(Para_Index==0) Speed_Set-=(int)Step[Step_Index];  //设定速度 
+ 395   6                  }
+ 396   5                        
+ 397   5                }
+ 398   4              }
+ 399   3            }
+ 400   2      
+ 401   2            while(KEY_DOWN==1);  //直到按键松开再运行
+ 402   2         }
+ 403   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3146    ----
+   CONSTANT SIZE    =     51    ----
+   XDATA SIZE       =    431       8
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,170 @@
+C51 COMPILER V9.01   SYSTEM_INIT                                                           07/03/2020 15:17:29 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE SYSTEM_INIT
+OBJECT MODULE PLACED IN .\Out_File\System_Init.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\CODE\System_Init.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\Librar
+                    -ies\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\USER\inc;..\USER\src;..\CODE) DE
+                    -BUG OBJECTEXTEND PRINT(.\Out_File\System_Init.lst) TABS(2) OBJECT(.\Out_File\System_Init.obj)
+
+line level    source
+
+   1          /*
+   2           * @Description  : 
+   3           * @Version      : 
+   4           * @Date         : 2020-06-18 16:26:13
+   5           * @LastEditTime : 2020-06-29 15:28:41
+   6           */ 
+   7          #include "System_Init.h"
+   8          uchar System_OK = 0;
+   9          float Zero_Angle;
+  10          float  Difference = 0,Differencelast=0;
+  11          int8 Dif_Nor_coefficient;
+  12          int8 K1,K2,K3,K4;
+  13          float LAD,RAD,LADC,RADC; 
+  14          int   I_LAD,I_LADC,I_RADC,I_RAD,
+  15                O_I;
+  16          float Voltage;
+  17          
+  18          void System_Init()
+  19          {
+  20   1        uint32 i;
+  21   1      /************************ LED 初始化  *******************/
+  22   1        gpio_mode(P52,GPO_PP);                
+  23   1        LED1 = !LED1;                          // 打开LED指示灯  全部初始化成功
+  24   1      /************************ 参数初始化 ********************/
+  25   1        PID_Parameter_Init(&MOTOR_PID); // 速度环PID参数初始化
+  26   1        PID_Parameter_Init(&Angle_PID); // 角度环PID参数初始化
+  27   1        PID_Parameter_Init(&Ang_Vel_PID); // 角速度环PID参数初始化
+  28   1        PID_Parameter_Init(&Direct_PID);  // 转向环PID参数初始化
+  29   1        PID_Parameter_Init(&Distance_PID);  // 位置环PID参数初始化
+  30   1        Curvature = 0;      // 初始化目标转向曲率为0
+  31   1        Speed_Set = 280;      // 初始化目标速度为0
+  32   1        Zero_Angle = 3;
+  33   1        Target_Angle.Y = Zero_Angle*100;
+  34   1      /************************ 电机 初始化 ********************/
+  35   1        pwm_init(MOTOR1_PWM,MOTOR_HZ,0);// 初始化 电机 PWM右前
+  36   1        pwm_init(MOTOR2_PWM,MOTOR_HZ,0);// 初始化 电机 PWM右后 
+  37   1        pwm_init(MOTOR3_PWM,MOTOR_HZ,0);// 初始化 电机 PWM左后 
+  38   1        pwm_init(MOTOR4_PWM,MOTOR_HZ,0);// 初始化 电机 PWM左前
+  39   1      /************************ 串口 初始化 ********************/
+  40   1        uart_init(UART_2,UART2_RX_P10,UART2_TX_P11,115200,TIM_0);
+  41   1      /************************ 定时器 初始化  *****************/ 
+  42   1        pit_timer_ms(TIM_3, 2);
+  43   1      /************************ 蜂鸣器初始化 ***********************/  
+  44   1        gpio_mode(P4_4,GPO_PP);                //蜂鸣器初始化 
+  45   1      /************************ 拨码开关 ***************************/  
+  46   1        gpio_mode(P3_2,GPIO);
+  47   1        gpio_pull_set(P3_2,PULLUP);          //使能上拉
+  48   1        gpio_mode(P3_3,GPIO);
+  49   1        gpio_pull_set(P3_3,PULLUP);          //使能上拉
+  50   1      //  gpio_mode(P3_4,GPIO);
+  51   1      //  gpio_pull_set(P3_4,PULLUP);          //使能上拉
+  52   1      /************************ 停车管脚 ***************************/ 
+  53   1        gpio_mode(P7_5,GPIO);
+C51 COMPILER V9.01   SYSTEM_INIT                                                           07/03/2020 15:17:29 PAGE 2   
+
+  54   1        gpio_pull_set(P7_5,PULLUP);          //使能上拉
+  55   1      /************************ 按键屏幕初始化 **********************/ 
+  56   1        gpio_mode(P4_0,GPIO);          //上
+  57   1        gpio_pull_set(P4_0,PULLUP);          //使能上拉
+  58   1        gpio_mode(P4_1,GPIO);          //下
+  59   1        gpio_pull_set(P4_1,PULLUP);          //使能上拉
+  60   1        gpio_mode(P4_2,GPIO);          //左
+  61   1        gpio_pull_set(P4_2,PULLUP);          //使能上拉
+  62   1        gpio_mode(P4_3,GPIO);          //右
+  63   1        gpio_pull_set(P4_3,PULLUP);          //使能上拉
+  64   1        gpio_mode(P4_4,GPIO);          //取消
+  65   1        gpio_pull_set(P4_4,PULLUP);          //使能上拉
+  66   1        gpio_mode(P4_5,GPIO);          //确定
+  67   1        gpio_pull_set(P4_5,PULLUP);          //使能上拉
+  68   1      //  OLED_Init();
+  69   1      /************************ 编码器初始化 ************************/   
+  70   1        gpio_mode(P3_5,GPIO);
+  71   1        gpio_pull_set(P3_5,PULLUP);
+  72   1        gpio_mode(P5_3,GPIO);
+  73   1        gpio_pull_set(P5_3,PULLUP);   //以上两个端口是判断方向的
+  74   1        ctimer_count_init(CTIM0_P34); 
+  75   1        ctimer_count_init(CTIM3_P04); //以上两个端口是采集速度
+  76   1      /************************ 电池电压 ************************/   
+  77   1       //adc_init(ADC_P10, ADC_SYSclk_DIV_2);           // 
+  78   1       //Voltage=adc_once(ADC_P10, ADC_12BIT)*Voltage_co;
+  79   1       // TURN_lim=TURN_lim;//*(Voltage_st/Voltage);
+  80   1      /*********************** 电感初始化 ***********************/
+  81   1        adc_init(ADC_P00, ADC_SYSclk_DIV_2);         //
+  82   1        adc_init(ADC_P01, ADC_SYSclk_DIV_2);         //
+  83   1        adc_init(ADC_P02, ADC_SYSclk_DIV_2);        // 
+  84   1        //adc_init(ADC_P03, ADC_SYSclk_DIV_2);        // 
+  85   1        //adc_init(ADC_P04, ADC_SYSclk_DIV_2);        // 
+  86   1        //adc_init(ADC_P05, ADC_SYSclk_DIV_2);        // 
+  87   1       
+  88   1        LAD  = adc_once(ADC_P00, ADC_12BIT);
+  89   1        RAD  = adc_once(ADC_P02, ADC_12BIT);
+  90   1      /*********************** 环岛标志位电感赋值 ***************/
+  91   1        /***新车***/
+  92   1        I_LAD =1900;                          
+  93   1        I_LADC=900;                                 
+  94   1        I_RADC=900;                                   
+  95   1        I_RAD =1900; 
+  96   1        O_I   =60;
+  97   1      /************************ 陀螺仪 初始化 ******************/
+  98   1        while (My_MPU6050_Init());
+  99   1        for (i = 0; i < 200; i++)
+ 100   1        {
+ 101   2          Get_Attitude(); // 姿态解算
+ 102   2          Tar_Ang_Vel.Y = PID_Realize(&Angle_PID, Angle, (int32)(Attitude_Angle.Y*100), Zero_Angle*100);
+ 103   2        }
+ 104   1        Run_Flag = 1;
+ 105   1      /*********************** 正确角度发车****************************/
+ 106   1        while (!System_OK)
+ 107   1        {
+ 108   2          if (Attitude_Angle.Y < 20 && Attitude_Angle.Y > -30)  // 姿态进入正常范围
+ 109   2          {
+ 110   3            System_OK = 1;
+ 111   3          }
+ 112   2        }
+ 113   1        LED1 = !LED1;// 关闭LED指示灯
+ 114   1      }
+ 115          /****读拨码开关的值****/
+C51 COMPILER V9.01   SYSTEM_INIT                                                           07/03/2020 15:17:29 PAGE 3   
+
+ 116          void Read_Switch() 
+ 117          {
+ 118   1        K1 = P3_2;
+ 119   1        K2 = P3_3;
+ 120   1        //K3 = P3_4;
+ 121   1        //K4 = P3_5;
+ 122   1        if(K1==0)  //拨码开关1功能
+ 123   1        {
+ 124   2          //OLED_Draw_UI();//屏
+ 125   2          //Check_BottonPress();//按键
+ 126   2        }
+ 127   1        if(K2==0)   //拨码开关2功能
+ 128   1        {
+ 129   2          //Send_Begin();//上位机
+ 130   2          //Testdata_generate();
+ 131   2          //Send_Variable();
+ 132   2        }
+ 133   1        if(K3==0)  //拨码开关4功能
+ 134   1        {
+ 135   2           
+ 136   2        }
+ 137   1        if(K4==0)  //拨码开关4功能
+ 138   1        {
+ 139   2           
+ 140   2        }
+ 141   1      } 
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    781    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     48       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,193 @@
+C51 COMPILER V9.01   BALANCE                                                               07/03/2020 15:17:28 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE BALANCE
+OBJECT MODULE PLACED IN .\Out_File\Balance.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\CODE\Balance.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\Libraries\
+                    -libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\USER\inc;..\USER\src;..\CODE) DEBUG 
+                    -OBJECTEXTEND PRINT(.\Out_File\Balance.lst) TABS(2) OBJECT(.\Out_File\Balance.obj)
+
+line level    source
+
+   1          /*
+   2           * @Description  : 
+   3           * @Version      : 
+   4           * @Date         : 2020-06-21 20:30:51
+   5           * @LastEditTime : 2020-06-24 18:09:29
+   6           */
+   7          #include "Balance.h"
+   8          S_FLOAT_XYZ
+   9          GYRO_Real,             // 陀螺仪转化后的数据
+  10              ACC_Real,          // 加速度计转化后的数据
+  11              Attitude_Angle,    // 当前角度
+  12              Last_Angle,        // 上次角度
+  13              Target_Angle,      // 目标角度
+  14              Target_Angle_Grow; // 目标角度增长
+  15          S_INT16_XYZ
+  16          GYRO,            // 陀螺仪原始数据
+  17              GYRO_Offset, // 陀螺仪温飘
+  18              GYRO_Last,   // 陀螺仪上次数据
+  19              ACC,         // 加速度计数据
+  20              ACC_Offset,  // 加速度计温飘
+  21              ACC_Last;    // 加速度计上次数据
+  22          S_INT32_XYZ
+  23          Tar_Ang_Vel,          // 目标角速度
+  24              Tar_Ang_Vel_Last, // 上次目标角速度
+  25              Tar_Ang_Vel_Grow; // 目标角速度增长
+  26          int32
+  27              In_Out_Roundabout_I = 0,
+  28              In_Out_Roundabout_ture_I = 0,
+  29              Out_Roundabout_I = 0,
+  30              Run_I = 0,
+  31              Speed_Now = 0,        // 当前实际速度
+  32              Speed_Now_Last = 0,   // 上次实际速度
+  33              Speed_Min = 0,        // 左右最小速度
+  34              Speed_Set = 0,        // 目标设定速度
+  35              Theory_Duty = 0,      // 理论直立占空比
+  36              Vel_Set = 0,          // 目标转向角速度
+  37              Direct_Parameter = 0, // 转向系数
+  38              Direct_Last = 0,
+  39              Curvature = 0;            // 目标转向半径倒数
+  40          float Target_Angle_min = 200, //跑动前倾最大角度
+  41              Target_Angle_max = 800;   //跑动后仰最大角度
+  42          /* 各种标志位，放定时器中进行时序控制 */
+  43          char Speed_Flag, Angle_Flag, Ang_Velocity_Flag, Roundabout_cnt = 0, In_Roundabout_Flag = 0, Out_Roundabout
+             -_Flag = 0, DMP_Flag;
+  44          /********************* 串级平衡控制 *********************/
+  45          // 频率控制在定时器中设置
+  46          void Balance_Control(void)
+  47          {
+  48   1        if (Ang_Velocity_Flag) // 直立角速度环  2ms
+  49   1        {
+  50   2          Ang_Velocity_Flag = 0;
+  51   2      
+  52   2          MPU6050_GetData(&GYRO, &ACC); // 读取陀螺仪数据
+C51 COMPILER V9.01   BALANCE                                                               07/03/2020 15:17:28 PAGE 2   
+
+  53   2          Data_Filter();                // 对原始数据滑动滤波
+  54   2          if (In_Roundabout_Flag)
+  55   2          {
+  56   3            In_Out_Roundabout_I += GYRO_Real.Z;
+  57   3            In_Out_Roundabout_ture_I = In_Out_Roundabout_I * Angle_coe;
+  58   3          }
+  59   2          /* 角速度环作为最内环控制直立 */
+  60   2          Theory_Duty += PID_Increase(&Ang_Vel_PID, Ang_Vel, (int32)(GYRO_Real.Y * 10), (int32)(Tar_Ang_Vel.Y));
+             - // 计算直立PWM
+  61   2          Theory_Duty = range_protect(Theory_Duty, -950, 950);
+  62   2      
+  63   2          if (System_OK)
+  64   2          {
+  65   3            // 获取当前速度 /* 角速度环作为最内环控制转向 */                 //Speed_Min
+  66   3            Direct_Parameter = PID_Realize_D(&Direct_PID, Direct, (int32)(GYRO_Real.Z * 100), Curvature * Speed_
+             -Min); // 转向环左正右负
+  67   3            Direct_Parameter = range_protect(Direct_Parameter, -1200, 1200);
+  68   3          }
+  69   2      
+  70   2          Direct_Last = Direct_Last * 0.2 + Direct_Parameter * 0.8; // 更新上次角速度环结果
+  71   2          MOTOR_Duty_Left = Theory_Duty - Direct_Last;              //; // 左右电机根据转向系数调整�
+             -��速
+  72   2          MOTOR_Duty_Right = Theory_Duty + Direct_Last;             //;
+  73   2      
+  74   2          if (Run_Flag)
+  75   2          {
+  76   3            if (Stop_Flag)
+  77   3              MOTOR_Control(MOTOR_Duty_Left, MOTOR_Duty_Right); // 控制左右电机
+  78   3            else
+  79   3            {
+  80   4              MOTOR_Control(-300, -300); // 停车电机控制
+  81   4              delay_ms(500);
+  82   4              MOTOR_Control(0, 0); // 停车电机控制
+  83   4              delay_ms(7000);
+  84   4              Run_I = 0;
+  85   4              Stop_Flag = 1;
+  86   4            }
+  87   3          }
+  88   2          else
+  89   2          {
+  90   3            MOTOR_Control(0, 0); // 停车电机控制
+  91   3          }
+  92   2          Get_Attitude();
+  93   2        }
+  94   1        if (Angle_Flag) // 直立角度环 10ms
+  95   1        {
+  96   2          Speed_Measure();
+  97   2          Angle_Flag = 0;
+  98   2          /* 角度环加到角速度环上串级控制 */ // 结果为放大10倍的目标角速度
+  99   2          Tar_Ang_Vel.Y = PID_Realize(&Angle_PID, Angle, (int32)(Attitude_Angle.Y * 100), (int32)Target_Angle.Y)
+             -;
+ 100   2          Tar_Ang_Vel.Y = range_protect(Tar_Ang_Vel.Y, -1500, 1500); // 注意正负号
+ 101   2        }
+ 102   1        if (Speed_Flag) // 速度环     100ms
+ 103   1        {
+ 104   2          Speed_Flag = 0;
+ 105   2          /* 速度环加到角度环上串级控制 */
+ 106   2          if (Run_I < 10000)
+ 107   2          {
+ 108   3            Target_Angle.Y = Target_Angle_min - 1000;
+ 109   3          }
+ 110   2          else
+C51 COMPILER V9.01   BALANCE                                                               07/03/2020 15:17:28 PAGE 3   
+
+ 111   2          {
+ 112   3            Target_Angle.Y = -PID_Realize(&MOTOR_PID, MOTOR, Speed_Now, Speed_Set);                    // 结果
+             -为放大100倍的目标角度
+ 113   3            Target_Angle.Y += Zero_Angle * 100;                                                        // 目标
+             -角度叠加在零点上
+ 114   3            Target_Angle.Y = range_protect((int32)Target_Angle.Y, Target_Angle_min, Target_Angle_max); // -44 22
+ 115   3          }
+ 116   2        }
+ 117   1      }
+ 118          /* 初始化用到的一些变量 */
+ 119          void Balance_Init(void)
+ 120          {
+ 121   1        Attitude_Angle.Y = 0;
+ 122   1        Target_Angle.Y = 0;
+ 123   1        Tar_Ang_Vel.Y = 0;
+ 124   1        Tar_Ang_Vel.Z = 0;
+ 125   1      }
+ 126          /******** 限幅保护 *********/
+ 127          int32 range_protect(int32 duty, int32 min, int32 max) //限幅保护
+ 128          {
+ 129   1        if (duty >= max)
+ 130   1        {
+ 131   2          return max;
+ 132   2        }
+ 133   1        if (duty <= min)
+ 134   1        {
+ 135   2          return min;
+ 136   2        }
+ 137   1        else
+ 138   1        {
+ 139   2          return duty;
+ 140   2        }
+ 141   1      }
+ 142          /******** 限幅保护2 *********/
+ 143          int32 range_protect_main(int32 duty, int32 min, int32 max) //限幅保护
+ 144          {
+ 145   1        if (duty >= max)
+ 146   1        {
+ 147   2          return max;
+ 148   2        }
+ 149   1        if (duty <= min)
+ 150   1        {
+ 151   2          return min;
+ 152   2        }
+ 153   1        else
+ 154   1        {
+ 155   2          return duty;
+ 156   2        }
+ 157   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1417    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    211      24
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
