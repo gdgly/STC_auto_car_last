@@ -45,7 +45,7 @@ int32 PlacePID_Control(PID *sprt, float *PID, int32 NowPiont, int32 SetPoint)
 		sprt->SumError = -PID[KT];
 	}
     */
-	Kp = 1.0 * (iError*iError) / PID[KP] + PID[KI];	//P值与差值成二次函数关系，始终大于0，此处P和I不是PID参数，而是动态PID参数，要注意！！！
+	Kp = 1.0 * (iError*iError) / PID[KP] + PID[KI];	//P值与差值成二次函数关系始终大于，此处P和I不是PID参数，而是动态PID参数，要注意！！！
 	
 	Actual = Kp * iError
 	       + PID[KD] * (0.8(*iError - sprt->LastError));//只用PD   原式为0.8*iError+0.2*sprt->LastError- sqrt->LastError;		

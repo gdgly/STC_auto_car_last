@@ -2,7 +2,7 @@
  * @Description  : 
  * @Version      : 
  * @Date         : 2020-06-21 20:30:51
- * @LastEditTime : 2020-07-14 09:44:59
+ * @LastEditTime : 2020-07-14 09:32:50
  */
 #include "Balance.h"
 S_FLOAT_XYZ
@@ -57,7 +57,7 @@ void Balance_Control(void)
       In_Out_Roundabout_I += GYRO_Real.Z;
       In_Out_Roundabout_ture_I = In_Out_Roundabout_I * Angle_coe;
     }
-    /* 角速度环作为最内环控制直立 */  //增量式PID 所以 用  +=
+    /* 角速度环作为最内环控制直立 */
     Theory_Duty += PID_Increase(&Ang_Vel_PID, Ang_Vel, (int32)(GYRO_Real.Y * 10), (int32)(Tar_Ang_Vel.Y)); // 计算直立PWM
     Theory_Duty = range_protect(Theory_Duty, -950, 950);
 

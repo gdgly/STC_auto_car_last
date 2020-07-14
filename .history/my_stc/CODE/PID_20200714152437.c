@@ -2,7 +2,7 @@
  * @Description  : 
  * @Version      : 
  * @Date         : 2020-06-21 20:33:02
- * @LastEditTime : 2020-07-14 15:31:17
+ * @LastEditTime : 2020-07-14 15:24:37
  */ 
 #include "PID.h"
 
@@ -12,7 +12,7 @@ float Angle[4]   = {0.15, 0, 0.06, 500};		// 角度环PID
 float Ang_Vel[4] = {0.20, 0.018, 0.001, 1000};		// 角速度环PID
 float Direct[4]  = {0.017, 0.001, 0.023, 70};	// 转向环PID 位置	0.017	0.02
 /********* 转向外环动态PID ********/     //由于是串级PID,所以称外环此处的 P   1/P为动态P的系数    
-float Turn[5][4] = {{100, 2, 1, 100},   //起步转向参数PID              I    为动态P的最小限幅(始终不会到达的最小值)
+float Turn[5][4] = {{100, 2, 1, 100},   //起步转向参数PID              I    为动态P的最小限幅
 		    		{100, 3, 2, 100},   //低速转向参数PID	
 		    		{100, 4, 3, 100},   //中速转向参数PID	
 		    		{100, 5, 4, 100},   //高速转向参数PID	
@@ -45,13 +45,13 @@ int32 PlacePID_Control(PID *sprt, float *PID, int32 NowPiont, int32 SetPoint)
 		sprt->SumError = -PID[KT];
 	}
     */
-	Kp = 1.0 * (iError*iError) / PID[KP] + PID[KI];	//P值与差值成二次函数关系，始终大于0，此处P和I不是PID参数，而是动态PID参数，要注意！！！
+	Kp = 1.0 * (iError*iError) / PID[KP] + PID[KI];	//P值与差值成二次函数关系，此处P和I不是PID参数，而是动态PID参数，要注意！！！
 	
-	Actual = Kp * iError
-	       + PID[KD] * (0.8(*iError - sprt->LastError));//只用PD   原式为0.8*iError+0.2*sprt->LastError- sqrt->LastError;		
-    sprt->LastError = iError;           // 更新过去的误差
-    //	Actual += sprt->SumError*0.1;不用I所以不需要误差和
+	Actual = Kp * iError+ PID[KD] * (0.8(*iError - sprt->LastError));//只用PD   0.8*iError+0.2*sprt->LastError- sqrt->LastiError;		//更新上次误差
+
+//	Actual += sprt->SumError*0.1;不用I所以不需要误差和
 	Actual = range_protect_main(Actual, -TURN_lim, TURN_lim);
+
 	return Actual;
 }
 

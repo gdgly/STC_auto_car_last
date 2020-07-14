@@ -2,7 +2,7 @@
  * @Description  : 
  * @Version      : 
  * @Date         : 2020-06-18 16:24:56
- * @LastEditTime : 2020-07-14 15:04:10
+ * @LastEditTime : 2020-07-14 15:01:05
  */
 
 #include "MyControl.h"
@@ -95,8 +95,8 @@ void Speed_Measure(void)
   Speed_Min = Speed_Min * 0.1 + Speed_Now * 0.9;
   Speed_Min = range_protect(Speed_Min, 10, 290); //限幅保护
   /**********转向参数选择**********/    // 以当前速度与目标速度对比，得出转向参数
-  if (Speed_Min <= Speed_Set * 0.3)    // 当前速度越大，得出的转向曲率对应的PID不同
-    Fres = 0;                          // 转向曲率越大，表明弯道半径越小弯道越弯曲，转向位置式PID得出的值越大
+  if (Speed_Min <= Speed_Set * 0.3)    // 当前速度越大，
+    Fres = 0;
   else if (Speed_Min <= Speed_Set * 0.7)
     Fres = 1;
   else if (Speed_Min <= Speed_Set)

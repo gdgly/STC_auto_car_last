@@ -2,7 +2,7 @@
  * @Description  : 
  * @Version      : 
  * @Date         : 2020-06-21 20:30:51
- * @LastEditTime : 2020-07-14 09:44:59
+ * @LastEditTime : 2020-07-14 09:30:56
  */
 #include "Balance.h"
 S_FLOAT_XYZ
@@ -51,13 +51,13 @@ void Balance_Control(void)
     Ang_Velocity_Flag = 0;
 
     MPU6050_GetData(&GYRO, &ACC); // 读取陀螺仪数据
-    Data_Filter();
+    Data_Filter()
     if (In_Roundabout_Flag)       // 圆环控制
     {
       In_Out_Roundabout_I += GYRO_Real.Z;
       In_Out_Roundabout_ture_I = In_Out_Roundabout_I * Angle_coe;
     }
-    /* 角速度环作为最内环控制直立 */  //增量式PID 所以 用  +=
+    /* 角速度环作为最内环控制直立 */
     Theory_Duty += PID_Increase(&Ang_Vel_PID, Ang_Vel, (int32)(GYRO_Real.Y * 10), (int32)(Tar_Ang_Vel.Y)); // 计算直立PWM
     Theory_Duty = range_protect(Theory_Duty, -950, 950);
 
@@ -105,7 +105,7 @@ void Balance_Control(void)
     Speed_Flag = 0;
     /* 速度环加到角度环上串级控制 */  // 结果为目标角度   角度环为内环
     if (Run_I < 10000)
-    {
+    
       Target_Angle.Y = Target_Angle_min - 1000;
     }
     else

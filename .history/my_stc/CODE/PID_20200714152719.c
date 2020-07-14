@@ -2,7 +2,7 @@
  * @Description  : 
  * @Version      : 
  * @Date         : 2020-06-21 20:33:02
- * @LastEditTime : 2020-07-14 15:31:17
+ * @LastEditTime : 2020-07-14 15:27:14
  */ 
 #include "PID.h"
 
@@ -45,13 +45,13 @@ int32 PlacePID_Control(PID *sprt, float *PID, int32 NowPiont, int32 SetPoint)
 		sprt->SumError = -PID[KT];
 	}
     */
-	Kp = 1.0 * (iError*iError) / PID[KP] + PID[KI];	//P值与差值成二次函数关系，始终大于0，此处P和I不是PID参数，而是动态PID参数，要注意！！！
+	Kp = 1.0 * (iError*iError) / PID[KP] + PID[KI];	//P值与差值成二次函数关系，此处P和I不是PID参数，而是动态PID参数，要注意！！！
 	
-	Actual = Kp * iError
-	       + PID[KD] * (0.8(*iError - sprt->LastError));//只用PD   原式为0.8*iError+0.2*sprt->LastError- sqrt->LastError;		
-    sprt->LastError = iError;           // 更新过去的误差
-    //	Actual += sprt->SumError*0.1;不用I所以不需要误差和
+	Actual = Kp * iError+ PID[KD] * (0.8(*iError - sprt->LastError));//只用PD   原式为0.8*iError+0.2*sprt->LastError- sqrt->LastError;		//更新上次误差
+
+//	Actual += sprt->SumError*0.1;不用I所以不需要误差和
 	Actual = range_protect_main(Actual, -TURN_lim, TURN_lim);
+    sprt-
 	return Actual;
 }
 

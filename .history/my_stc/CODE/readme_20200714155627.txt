@@ -1,0 +1,954 @@
+
+   //方向环参数
+#define Dir_Control_P  -2100//-4100//7270//3100//6570//6870//3570//10200//7950//6500//5200//7100//4200//3483//1980//440 //方向控制比例参数
+#define Dir_Conrol_D -0.072//0.1340//0.048//0.1320//-0.0690//0.178//0.0760//0.0835//0.0700//0.0789//0.0899//0.0813//0.0713//0.0470//0.0050 //方向控制微分参数
+#define Err_Conrol 29500//-3800//-41000//1800 //偏差控制
+
+//圆环左右标志
+float ring_L_R = 1;  //1为左环，2为右环
+   
+int filtering_L();
+int filtering_R();
+   
+//方向环变量
+double direction_control_out_new,direction_control_out_old,direction_control_out,DIR_CONTROL_D_VALUE;
+int g_nDirectionControlPeriod,g_nDirectionControlCount;
+double leftrightadd,leftrightsub,value;  //左右AD采集之和、之差、输出值
+double fdvalue;  //陀螺仪输出值
+int adc_get[5] = 0;  //5次采集
+int adc_get_new[3] = 0;  //滤波
+uint16 getleft,getright;
+double error; //偏差值
+double deviation; //差比和偏差值
+double leftrignt_old ,leftrignt_new;
+double err;
+//float Dir_Control_P;
+int acc_x;
+
+
+
+//圆环检测变量
+#define Dir_Control_Ring_P -60000  //圆环控制比例函数
+#define Dir_Control_Ring_D -0.000
+float  ring_add, ring_sub, deviation_ring, ring_value;
+int16 ring_L, ring_R, ring_flag1 = 0, ring_flag2 = 0, ring_flag3 = 0, ring_flag4 = 0;
+
+int angle_flag = 0, speed_flag = 0, direction_flag = 0, motor_flag = 0;
+   
+   //滤波变量
+#define FILTER_N 12
+int filter_buf_L[FILTER_N + 1];
+int filter_buf_R[FILTER_N + 1];
+
+
+//速度控制变量
+int speed_slow = 0, speed_slow_count = 0;
+
+//卡尔曼滤波变量
+static float angle = POINT_ANGLE;
+static float Q_angle=0.001, Q_gyro=0.0007, R_angle=5, dt=0.01;//Q增大，动态响应增大
+static float Pk[2][2] = { {1, 0}, {0, 1 }};
+static float Pdot[4] ={0,0,0,0};
+static float q_bias=0, angle_err, PCt_0, PCt_1, E, K_0, K_1, t_0, t_1;
+
+
+   //示波器函数，变量
+float OutData[4]={0};
+
+S_FLOAT_XYZ 
+	GYRO_Real,		// 陀螺仪转化后的数据
+	ACC_Real,		// 加速度计转化后的数据
+	Attitude_Angle,	// 当前角度
+	Last_Angle,		// 上次角度
+	Target_Angle;	// 目标角度
+	
+
+S_INT16_XYZ
+	GYRO,			// 陀螺仪原始数据
+	GYRO_Offset,	// 陀螺仪温飘
+	GYRO_Last,		// 陀螺仪上次数据
+	ACC, 			// 加速度计数据
+	ACC_Offset,		// 加速度计温飘
+	ACC_Last;		// 加速度计上次数据
+S_INT32_XYZ
+	Tar_Ang_Vel,	// 目标角速度
+	Tar_Ang_Vel_Last;	// 上次目标角速度
+
+float a,b,c,d,e;
+
+float accel_x,accel_z, Ang_ACC, gyro_y, Angle, gyro_y_true, g_fAngleControLOut;
+float Speed_out;
+
+float speed_pwm_R;
+float speed_pwm_L;
+
+void AngleControl();
+void Angle_Calculate();
+float Angle_PID_Realize(float NowData, float Point);
+void init_pit0();
+void pit0_isr();
+void ftm3_init();
+float ACC_PID_Realize(float NowData, float Point);
+void ftm_init();
+float zero = 0;
+void init_adc();
+void direction_control();
+int filtering_L_ring();
+int filtering_R_ring();
+void ring_judge();
+void ring_get();
+void ring_judge_out();
+void obstacle_judge();
+void circuit_send();
+void init_uart();
+int obstacle_get();
+void uartn_handler();
+void Kalman_Filter(float Accel,float Gyro);
+float Angle_PID(float NowData);
+float Gyro_PID(float NowData);
+void speed_calculate();
+float Speed_PID(float NowData);
+
+
+//速度采集变量
+uint8 g_nSpeedControlPeriod;
+int left_counter = 0,right_counter,g_nSpeedControlCount;
+float carspeed,fDelta,fP,fI;
+float g_fSpeedControlIntegral = 0,g_fSpeedControlOutNew = 0,g_fSpeedControlOutOld = 0,g_fSpeedControlOut = 0;
+int speed_Left,speed_Right;
+
+
+uint16 i = 0, j = 0, k = 0, m, n;
+
+ 
+ void main()
+{
+    int num = 10;
+    
+    MPU6050_OPEN();
+    while (MPU6050_Init());
+    MPU6050_Offset();
+    ftm3_init();
+    ftm_init();
+    init_adc();
+    init_uart();
+    led_init(LED0);
+    led_init(LED1);
+
+  /**********优先级配置*********/
+   //NVIC_SetPriority(UART2_RX_TX_IRQn,0);            
+   NVIC_SetPriority(PIT0_IRQn,1);   
+  // NVIC_SetPriority(PORTA_IRQn,2);
+  // NVIC_SetPriority(DMA0_DMA16_IRQn,3);
+  /**********摄像头初始化*********/
+  //camera_init1();  
+    while(num)//采集陀螺仪零漂
+    {
+      MPU6050_GetData(&GYRO, &ACC);
+      gyro_y  = GYRO.Y ;
+      num--;
+      zero = zero + gyro_y;
+      if(num == 0)
+      {
+        zero = zero/10;
+      }
+    }
+   
+    init_pit0();
+    
+    while(1)
+    {
+
+    }
+}
+
+float pitch,roll,yaw;
+void AngleControl()
+{
+  MPU6050_GetData(&GYRO, &ACC);	// 读取陀螺仪数据
+  Data_Filter();
+  Angle_Calculate();
+  if(Angle > 90)
+    Angle = 90;
+  if(Angle < 0)
+    Angle = 0;
+  if(Point_Angle > 51)
+    Point_Angle = 51;
+  if(Point_Angle < 44)
+    Point_Angle = 44;
+  g_fAngleControLOut = Angle_PID(Angle) + Gyro_PID(GYRO_Real.Y);
+  
+  /*Get_Attitude();
+  pitch = 90.0 - Attitude_Angle.X;
+  if(pitch > 90)
+    pitch = 90;
+  if(pitch<0)
+    pitch = 0;
+  roll = Attitude_Angle.Y;
+  yaw = Attitude_Angle.Z;*/
+
+  
+  //g_fAngleControLOut = (Angle - point) * P + (gyro_y_true) * D;// + ACC_PID_Realize(gyro_y_true, 0);//Angle_PID_Realize(Angle, point);////Angle_PID_Realize(Angle, point);
+  
+  if(g_fAngleControLOut>10000)
+  {
+    g_fAngleControLOut=10000;
+  }
+  if(g_fAngleControLOut<-10000)
+  {
+    g_fAngleControLOut=-10000;
+  }
+}
+
+//角度计算函数
+void Angle_Calculate()
+{
+  accel_x = ACC_Real.X;
+  accel_z = ACC_Real.Z;
+  Ang_ACC = (180.0/Pi*(float)(atan2(-accel_z, -accel_x)));
+  
+  //gyro_y  = GYRO.Y - zero ;
+  gyro_y_true = GYRO_Real.Y*0.24;//gyro_y/16.40;
+  Kalman_Filter(Ang_ACC, gyro_y_true);
+  Angle = angle;
+  //Angle = K1 * Ang_ACC + (1-K1) * (Angle + gyro_y * dt);
+}
+
+
+//卡尔曼滤波函数
+void Kalman_Filter(float Accel,float Gyro)			
+{ 
+	angle+=(Gyro-q_bias) * dt; ///预测值
+	Pdot[0]=Q_angle - Pk[0][1] - Pk[1][0];
+	Pdot[1]= -Pk[1][1];
+	Pdot[2]= -Pk[1][1];
+	Pdot[3]=Q_gyro;
+	
+	Pk[0][0] += Pdot[0] * dt;
+	Pk[0][1] += Pdot[1] * dt;
+	Pk[1][0] += Pdot[2] * dt;
+	Pk[1][1] += Pdot[3] * dt;
+	
+	angle_err = Accel - angle;///测量值-预测值
+	
+	PCt_0 =  Pk[0][0];
+	PCt_1 =  Pk[1][0];
+	
+	E = R_angle + PCt_0;
+	
+	K_0 = PCt_0 / E; ///卡尔曼增益
+	K_1 = PCt_1 / E;
+	
+	t_0 = PCt_0;
+	t_1 = Pk[0][1];
+
+	Pk[0][0] -= K_0 * t_0;
+	Pk[0][1] -= K_0 * t_1;
+	Pk[1][0] -= K_1 * t_0;
+	Pk[1][1] -= K_1 * t_1;
+	
+	angle+= K_0 * angle_err; ///最优角度=预测值+卡尔曼增益*(测量值-预测值)
+	q_bias	+= K_1 * angle_err;
+	//GYRO_Real.Y = Gyro-q_bias;
+}
+
+
+//中断函数
+int time0 = -1,time1 = -1,time2 = -1,time3 = -1,time4 = -1,time5 = -1,time6 = -1, time7 = -1;
+int speed_time = 0;
+int distance;
+void pit0_isr()
+{
+  time0++;
+  time1++;
+  time2++;
+  time3++;
+  time4++;
+  time5++;
+  time6++;
+  time7++;
+  
+  if(time0 == 0)//角度控制，8ms
+  {
+    AngleControl();
+    //tof_send_distance();
+    //distance = tof_getdata();
+
+  }
+  
+  if(time0 == 1)//速度控制，40ms
+  {
+
+      speed_time++;
+      if(speed_time == 6)
+      {
+       speed_calculate();
+        speed_time = 0;
+      }
+    
+  }
+  
+  if(time0 == 2)//方向控制，3ms
+  { 
+    //direction_control();
+    //obstacle_judge();//障碍控制
+  }
+ 
+  if(time0 == 3)
+  { 
+      //ring_judge();
+  }
+  
+  if(time0 == 4)
+  { 
+      //ring_judge();
+  }
+  
+  if(time0 == 5)
+  { 
+      //ring_judge();
+  }
+  
+  if(time0 == 6)
+  { 
+      //ring_judge();
+  }
+  
+    if(time0 == 7)
+  { 
+    time0 = -1;
+    time1 = -1;
+    time2 = -1;
+    time3 = -1;
+    time4 = -1;
+    time5 = -1;
+    time6 = -1;
+    time7 = -1;
+  }
+
+  speed_pwm_R = (g_fAngleControLOut + direction_control_out_new /*+ ring_value*/)/100; 
+  speed_pwm_L = (g_fAngleControLOut - direction_control_out_new /*- ring_value*/)/100; ;
+
+  //circuit_send();
+
+  if(speed_pwm_L>100)
+  {
+    speed_pwm_L=100;
+  }
+  if(speed_pwm_L<-100)
+  {
+    speed_pwm_L=-100;
+  }
+  
+  if(speed_pwm_R>100)
+  {
+    speed_pwm_R=100;
+  }
+  if(speed_pwm_R<-100)
+  {
+    speed_pwm_R=-100;
+  }
+  
+  
+  if(motor_flag == 0)
+  {if(speed_pwm_R < 0&&speed_pwm_L < 0)
+  {
+   ftm_pwm_duty(FTM3, FTM_CH0, -speed_pwm_R);
+   ftm_pwm_duty(FTM3, FTM_CH1, 0);
+   ftm_pwm_duty(FTM3, FTM_CH2, -speed_pwm_L);
+   ftm_pwm_duty(FTM3, FTM_CH3, 0);
+  }
+  else if(speed_pwm_R > 0&&speed_pwm_L > 0)
+  { 
+   ftm_pwm_duty(FTM3, FTM_CH0, 0);
+   ftm_pwm_duty(FTM3, FTM_CH1, speed_pwm_R);
+   ftm_pwm_duty(FTM3, FTM_CH2, 0);
+   ftm_pwm_duty(FTM3, FTM_CH3, speed_pwm_L);
+  }
+  else if(speed_pwm_R < 0&&speed_pwm_L > 0)
+  {   
+   ftm_pwm_duty(FTM3, FTM_CH0, 0);
+   ftm_pwm_duty(FTM3, FTM_CH1, -speed_pwm_R);
+   ftm_pwm_duty(FTM3, FTM_CH2, speed_pwm_L);
+   ftm_pwm_duty(FTM3, FTM_CH3, 0);
+  }
+  else if(speed_pwm_R > 0&&speed_pwm_L < 0)
+  { 
+   ftm_pwm_duty(FTM3, FTM_CH0, speed_pwm_R);
+   ftm_pwm_duty(FTM3, FTM_CH1, 0);
+   ftm_pwm_duty(FTM3, FTM_CH2, 0);
+   ftm_pwm_duty(FTM3, FTM_CH3, -speed_pwm_L);
+  }
+  }
+}
+
+// 角度环做最内环控制
+float Angle_LastError = 0;
+float Angle_PID(float NowData)
+{
+	float iError,	// 当前误差
+              Realize;	// 最后得出的实际增量
+
+	iError = Point_Angle - NowData;	// 计算当前误差
+        
+        if(iError > 1 || iError<-1 )//二次误差，增大响应
+        {
+          if(iError > 0)
+            Realize = Angle_P * iError * iError + Angle_D * (iError - Angle_LastError);
+          if(iError < 0)
+            Realize = -1 * Angle_P * iError * iError + Angle_D * (iError - Angle_LastError);
+        }
+        
+        if(iError > -1 && iError < 1)
+          Realize = Angle_P * iError + Angle_D * (iError - Angle_LastError);
+	Angle_LastError = iError;		  	// 更新上次误差
+
+	return Realize;	// 返回实际值
+}
+
+// 角度环做最内环控制
+float Gyro_LastError = 0;
+float Gyro_PID(float NowData)
+{
+	float iError,	// 当前误差
+              Realize;	// 最后得出的实际增量
+
+	iError = 0 - NowData;	// 计算当前误差
+        
+	Realize = Gyro_P * iError + Gyro_D * (iError - Gyro_LastError);
+        
+	Angle_LastError = iError;		  	// 更新上次误差
+
+	return Realize;	// 返回实际值
+}
+
+
+//速度环控制
+float Speed_LastError = 0;
+float Speed_Integral = 0;
+float Speed_iError = 0;
+float Speed_PID(float NowData)
+{
+	float 	// 当前误差
+              Realize;	// 最后得出的实际增量
+
+	Speed_iError = Point_Speed - NowData;	// 计算当前误差
+        
+        Speed_Integral = Speed_Integral + (Speed_iError - Speed_LastError) * Speed_I;     //速度环积分
+	Realize = Speed_P * Speed_iError + Speed_Integral + Speed_D * (Speed_iError - Speed_LastError);
+        
+	Speed_LastError = Speed_iError;		  	// 更新上次误差
+
+	return Realize;	// 返回实际值
+}
+
+
+
+
+//正交解码初始化
+void ftm_init()
+{
+  ftm_quad_init(FTM1,FTM_PS_1,FTM1_QDPHA_PIN,FTM1_QDPHB_PIN); //右轮
+  ftm_quad_init(FTM2,FTM_PS_1,FTM2_QDPHA_PIN,FTM2_QDPHB_PIN); //左轮
+}
+
+
+//PIT初始化
+void init_pit0()
+{  
+  pit_init_ms(PIT0, 1);
+  set_vector_handler(PIT0_VECTORn ,pit0_isr); 
+  enable_irq (PIT0_IRQn); 
+}
+
+//速度采集以及设定以及处理函数
+void speed_calculate()
+{
+  //编码器采集
+  left_counter = ftm_quad_get(FTM2); 
+  right_counter = -ftm_quad_get(FTM1);
+  ftm_quad_clean(FTM1);
+  ftm_quad_clean(FTM2);//清空计数通道
+  speed_Left = left_counter; 
+  speed_Right = right_counter;
+  
+  carspeed = (speed_Left + speed_Right);//采集的速度
+
+  Speed_out = Speed_PID(carspeed);
+  Point_Angle = Point_Angle + Speed_out;
+  if(Speed_iError == 0)
+    Point_Angle = (Point_Angle - POINT_ANGLE) / 2 + POINT_ANGLE;
+}
+
+
+
+//左右电感采集滤波函数
+int filtering_L()
+{
+  int i;
+  int filter_sum = 0;
+  
+  filter_buf_L[FILTER_N] = adc_once(ADC1_SE4a, ADC_12bit); //AD转换的值赋给数组最后一个值
+  
+  for(i = 0; i < FILTER_N; i++) 
+  {
+    filter_buf_L[i] = filter_buf_L[i + 1]; // 所有数据左移，低位仍掉
+    filter_sum = filter_sum + filter_buf_L[i] * i;
+  }
+  
+  return (int)(filter_sum / 78);
+
+}
+
+int filtering_R()
+{
+  int i;
+  int filter_sum = 0;
+  
+  filter_buf_R[FILTER_N] = adc_once(ADC1_SE7a, ADC_12bit); //AD转换的值赋给数组最后一个值
+  
+  for(i = 0; i < FILTER_N; i++) 
+  {
+    filter_buf_R[i] = filter_buf_R[i + 1]; // 所有数据左移，低位仍掉
+    filter_sum  = filter_sum + filter_buf_R[i] * i;
+  }
+  
+  return (int)(filter_sum / 78);
+
+}
+
+void direction_control()
+{ 
+  getleft = filtering_L();
+  getright = filtering_R();
+  acc_x = ACC.X; //x轴陀螺仪采集
+  leftrightadd = getleft + getright;
+  leftrightsub = getleft - getright;
+  deviation = leftrightsub / leftrightadd;
+  if(deviation > 0)
+    err = deviation;
+  else
+    err = -deviation;
+
+  leftrignt_new = deviation;
+  error = leftrignt_new - leftrignt_old;
+  leftrignt_old = leftrignt_new;
+  
+  value = deviation * Dir_Control_P;
+  
+  
+  direction_control_out_old = direction_control_out_new;   
+
+  fdvalue = acc_x;
+  fdvalue *= Dir_Conrol_D;
+  direction_control_out_new = fdvalue + value - (error) * Err_Conrol;
+}
+
+
+
+
+
+
+int filtering_R_ring() //右圆环检测电感
+{
+  int i;
+  int filter_sum = 0;
+  
+  filter_buf_R[FILTER_N] = adc_once(ADC1_SE7a, ADC_12bit); //AD转换的值赋给数组最后一个值
+  
+  for(i = 0; i < FILTER_N; i++) 
+  {
+    filter_buf_R[i] = filter_buf_R[i + 1]; // 所有数据左移，低位仍掉
+    filter_sum  = filter_sum + filter_buf_R[i] * i;
+  }
+  
+  return (int)(filter_sum / 78);
+
+}
+
+int filtering_L_ring() //左圆环检测电感
+{
+  int i;
+  int filter_sum = 0;
+  
+  filter_buf_R[FILTER_N] = adc_once(ADC1_SE4a, ADC_12bit); //AD转换的值赋给数组最后一个值
+  
+  for(i = 0; i < FILTER_N; i++) 
+  {
+    filter_buf_R[i] = filter_buf_R[i + 1]; // 所有数据左移，低位仍掉
+    filter_sum  = filter_sum + filter_buf_R[i] * i;
+  }
+  
+  return (int)(filter_sum / 78);
+
+}
+
+
+/**************左路圆环***************/
+
+int time = 0;
+//圆环判断
+void ring_judge()
+{
+  ring_get();
+  ring_flag1 = 1;
+  if(ring_L_R == 1)
+  {
+    if(ring_L>1200 && ring_R>1200 && getleft>2400 && getright>1400 && ring_flag2 != 2 && ring_flag2 != 3)
+    ring_flag2 = 1;
+  }
+  
+  if(ring_L_R == 2)
+  {
+    if(ring_L>1200 && ring_R>1200 && getleft>2800 && getright>1400 && ring_flag2 != 2 && ring_flag2 != 3)
+    ring_flag2 = 1;
+  }
+  
+  
+  if(ring_flag1 == 1 && ring_flag2 == 1)
+  {
+    ring_judge_out();
+    led(LED0, LED_ON);
+
+    time = time+1;
+    Car_Speed_Set = 450;
+  }
+  else 
+  {
+    ring_value = 0;
+  }
+    
+  if(ring_L_R == 1)
+  {
+    if(time>45)
+    {ring_flag1 = 0;
+      ring_flag2 = 2;
+      time = time + 1;
+    }
+  }
+    if(ring_L_R == 2)
+  {
+    if(time>205)
+    {ring_flag1 = 0;
+      ring_flag2 = 2;
+      time = time + 1;
+    }
+  }
+  
+  if(time > 110 )
+  {
+    Car_Speed_Set = 650;
+    ring_value = 200;
+  }
+  if(time > 700)
+  {
+    Car_Speed_Set = 800;
+  }
+  if(ring_flag2 == 2)
+  {
+    if(time>1500)
+    {
+      time = 0;
+      ring_flag2 = 3;
+      ring_value = 0;
+      Car_Speed_Set = 820;
+    }
+  }
+}
+
+void ring_get()
+{
+  ring_L = filtering_L_ring();
+  ring_R = filtering_R_ring()+200;
+
+  ring_sub = ring_L - ring_R;
+  ring_add = ring_L + ring_R;
+}
+
+void ring_judge_out()
+{
+    
+    direction_control_out_new = 0;
+    deviation_ring = ring_sub / ring_add;
+
+    if(ring_L_R == 1)
+      ring_value = -850;
+    if(ring_L_R == 2)
+      ring_value = 400; 
+}
+
+/**************右路圆环**************/
+/*int time = 0;
+//圆环判断
+void ring_judge()
+{
+  ring_get();
+  ring_flag1 = 1;
+  if(ring_L>1100 && ring_R>1100 && getleft>2600 && getright>1400 && ring_flag2 != 2 && ring_flag2 != 3)
+    ring_flag2 = 1;
+  
+  if(ring_flag1 == 1 && ring_flag2 == 1)
+  {
+    ring_judge_out();
+    led(LED0, LED_ON);
+
+    time = time+1;
+    Car_Speed_Set = 300;
+  }
+  else 
+  {
+    ring_value = 0;
+  }
+    
+
+  if(time>70)
+  {ring_flag1 = 0;
+    ring_flag2 = 2;
+    time = time + 1;
+  }
+  
+  if(time > 300 )
+  {
+    Car_Speed_Set = 500;
+    ring_value = 200;
+  }
+  if(time > 1000)
+  {
+    Car_Speed_Set = 800;
+  }
+  if(ring_flag2 == 2)
+  {
+    if(time>2500)
+    {
+      time = 0;
+      ring_flag2 = 3;
+      Car_Speed_Set = 820;
+    }
+  }
+}
+
+void ring_get()
+{
+  ring_L = filtering_L_ring();
+  ring_R = filtering_R_ring()+200;
+
+  ring_sub = ring_L - ring_R;
+  ring_add = ring_L + ring_R;
+}
+
+void ring_judge_out()
+{
+    
+    direction_control_out_new = 0;
+    deviation_ring = ring_sub / ring_add;
+
+    ring_value = 700;//700//deviation_ring * Dir_Control_Ring_P + (acc_x) * Dir_Control_Ring_D;    
+}*/
+/*uint16 obstacle_value = 0, obstacle_flag1 = 0, obstacle_flag2 = 0, obstacle_flag3 = 0;
+int obstacle_get_value[5];
+//障碍检测
+int obstacle_get()
+{
+  
+  int d = 0;
+  int b, c;
+  int get_filtering;
+  int rr;
+  
+  for(rr=0;rr<5;rr++)
+  {
+    obstacle_get_value[rr] = adc_once(ADC0_SE17, ADC_12bit);
+  }
+  
+  for(b=1; b<5; b++)
+  {
+    for(c=1; c<=5-b; c++)
+    {
+      if(obstacle_get_value[c] > obstacle_get_value[c+1])
+      {
+        d = obstacle_get_value[c];
+        obstacle_get_value[c] = obstacle_get_value[c+1];
+        obstacle_get_value[c+1] = d;
+      }
+    }
+  }
+  
+    for(b = 0; b < 5; b++)
+  {
+    for(c = 0; c < 5 - b; c++)
+    {
+      if(obstacle_get_value[c] > obstacle_get_value[c + 1])
+      {
+        d = obstacle_get_value[c];
+        obstacle_get_value[c] = obstacle_get_value[c + 1];
+        obstacle_get_value[c + 1] = d;
+      }
+    }
+  }
+  
+  obstacle_get_value[0] = obstacle_get_value[1];
+  obstacle_get_value[1] = obstacle_get_value[2];
+  obstacle_get_value[2] = obstacle_get_value[3];
+  
+  get_filtering = (obstacle_get_value[0] + obstacle_get_value[1] + obstacle_get_value[2]) / 3;
+  
+  return get_filtering;
+}
+
+int obstacle_countrl = 0;
+
+//障碍控制
+void obstacle_judge()
+{
+    if(obstacle_flag1 != -1&&obstacle_flag2!=-1)
+    {
+      obstacle_value = obstacle_get();
+      if( obstacle_value > 1100 && obstacle_flag1 < 200 && circuit_break_flag == 1)
+      {
+          obstacle_flag3 = 1;
+      }
+      
+      if(obstacle_flag3 == 1 && obstacle_flag1 < 50)
+      {
+        Car_Speed_Set = 100;
+        obstacle_flag1++;
+        led(LED0, LED_ON);
+      }
+      
+      if(obstacle_flag3 == 1 && obstacle_flag1 > 50)
+      {
+        obstacle_countrl = 10 * obstacle_flag1;
+        if(obstacle_countrl > 300)
+          obstacle_countrl = -300;
+        direction_control_out_new =  direction_control_out_new + obstacle_countrl;
+        obstacle_flag1++;
+      }
+      
+      if(obstacle_flag1 > 200 && obstacle_value < 800)
+      {
+        obstacle_flag3 = 0;
+        Car_Speed_Set = 500;
+        direction_control_out_new = 0;
+        obstacle_flag2++;
+        if(obstacle_flag2 > 50)
+        {
+          if(obstacle_countrl > 150)
+            obstacle_countrl = 150;
+          direction_control_out_new = obstacle_countrl;
+        }
+      }
+      
+      if(obstacle_flag1 > 100 && obstacle_flag2 > 100)
+      {
+        obstacle_flag1 = -1;
+        obstacle_flag2 = -1;
+        led(LED0, LED_OFF);
+        Car_Speed_Set = 900;
+      }
+    }
+  
+}
+
+*/
+
+//断路标志发送
+int circuit_count = 0, circuit_count_flag = 0;
+void circuit_send()
+{
+  if(circuit_break_flag  == 1&&circuit_count_flag == 0)
+  {
+    led(LED1, LED_ON);
+    circuit_count++;
+
+    if(circuit_count > 40)
+    {
+      uart_putchar(UART2 , '1');
+      //Car_Speed_Set = 600;
+      circuit_count = 0;
+      circuit_count_flag = 1;
+      angle_flag = 0;
+      speed_flag = 0;
+      direction_flag = 0;
+    }
+    
+
+    /*if(circuit_count > 45 && circuit_count < 70)
+    {
+      g_fAngleControLOut = 0;
+      g_fSpeedControlOutNew = 0;
+      direction_control_out_new = 2050;
+    }
+    if(circuit_count >80)
+    {
+      angle_flag = 1;
+      speed_flag = 1;
+      direction_flag = 1;
+      g_fAngleControLOut = 0;
+      g_fSpeedControlOutNew = 0;
+      direction_control_out_new = 2050;
+    }
+    
+    if(circuit_count >360)
+    {
+      direction_control_out_new = 0;   
+    }
+
+    
+    if(circuit_count > 10000)
+      circuit_count = 501;
+    
+    if(circuit_count > 500)
+    {
+      //uartn_handler();
+    }
+    */
+
+  }
+    
+    
+}
+
+
+void uartn_handler()
+{
+  if(uart_query    (UART2) == 1)   //接收数据寄存器满    
+    {    //用户需要处理接收数据    
+      Car_Speed_Set = 850;
+      circuit_count = 0;
+      circuit_count_flag = 1;
+      angle_flag = 0;
+      speed_flag = 0;
+      direction_flag = 0;
+      led(LED0, LED_OFF);
+    }    
+}
+
+
+
+
+//UART初始化
+void init_uart()
+{
+  /**********蓝牙初始化***********/
+   uart_init      (UART2,9600);//uart2通道 波特率9600 引脚D2 D3
+}
+
+//ADC采集初始化
+void init_adc()
+{
+  adc_init(ADC1_SE4a);
+  adc_init(ADC1_SE5a);
+  adc_init(ADC1_SE6a);
+  adc_init(ADC1_SE7a);
+  adc_init(ADC0_SE17);
+}
+
+
+//电机驱动初始化
+void ftm3_init()
+{
+  ftm_pwm_init(FTM3, FTM_CH0,17*1000,0,FTM3_CH0_PIN);
+  ftm_pwm_init(FTM3, FTM_CH1,17*1000,0,FTM3_CH1_PIN);
+  ftm_pwm_init(FTM3, FTM_CH2,17*1000,0,FTM3_CH2_PIN);
+  ftm_pwm_init(FTM3, FTM_CH3,17*1000,0,FTM3_CH3_PIN);
+}
