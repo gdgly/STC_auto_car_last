@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   ZF_PCA_DELAY                                                          07/03/2020 15:17:21 PAGE 1   
+C51 COMPILER V9.01   ZF_PCA_DELAY                                                          07/15/2020 14:47:13 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE ZF_PCA_DELAY
@@ -62,7 +62,7 @@ line level    source
   45          //--------------------------------------------------------------------------------------------------------
              ------------
   46          void pca_delay(void)
-C51 COMPILER V9.01   ZF_PCA_DELAY                                                          07/03/2020 15:17:21 PAGE 2   
+C51 COMPILER V9.01   ZF_PCA_DELAY                                                          07/15/2020 14:47:13 PAGE 2   
 
   47          {
   48   1        uint16 temp;

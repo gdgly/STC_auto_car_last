@@ -13,9 +13,6 @@
 #define false 0
 
 extern uint8 KEY_UP,KEY_DOWN,KEY_LEFT,KEY_RIGHT,KEY_CEL,KEY_SURE;
-
-extern float Variable[16];
-
 void Testdata_generate();
 void OLED_Draw_UI();  //画出界面
 void Check_BottonPress();

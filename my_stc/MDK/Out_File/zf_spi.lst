@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   ZF_SPI                                                                07/03/2020 15:17:18 PAGE 1   
+C51 COMPILER V9.01   ZF_SPI                                                                07/15/2020 14:47:12 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE ZF_SPI
@@ -62,7 +62,7 @@ line level    source
   46   1        sck_pin = sck_pin;
   47   1        mosi_pin = mosi_pin;
   48   1        miso_pin = miso_pin;
-C51 COMPILER V9.01   ZF_SPI                                                                07/03/2020 15:17:18 PAGE 2   
+C51 COMPILER V9.01   ZF_SPI                                                                07/15/2020 14:47:12 PAGE 2   
 
   49   1        
   50   1      
@@ -126,7 +126,7 @@ line level    source
  108   2        }
  109   1          
  110   1        
-C51 COMPILER V9.01   ZF_SPI                                                                07/03/2020 15:17:18 PAGE 3   
+C51 COMPILER V9.01   ZF_SPI                                                                07/15/2020 14:47:12 PAGE 3   
 
  111   1        SPCTL |= baud;    //速率设定
  112   1      
@@ -190,7 +190,7 @@ line level    source
  166   2            gpio_pull_set(P1_5, PULLUP);
  167   2            break;
  168   2          case SPI_2:
-C51 COMPILER V9.01   ZF_SPI                                                                07/03/2020 15:17:18 PAGE 4   
+C51 COMPILER V9.01   ZF_SPI                                                                07/15/2020 14:47:12 PAGE 4   
 
  169   2            gpio_mode(P2_3, GPIO);
  170   2            gpio_mode(P2_4, GPIO);
@@ -254,7 +254,7 @@ line level    source
  225   2          break;
  226   2        case 1:
  227   2          SPCTL |= 0x01<<2;
-C51 COMPILER V9.01   ZF_SPI                                                                07/03/2020 15:17:18 PAGE 5   
+C51 COMPILER V9.01   ZF_SPI                                                                07/15/2020 14:47:12 PAGE 5   
 
  228   2          break;
  229   2        case 2:

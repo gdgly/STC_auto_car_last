@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   BOARD                                                                 07/03/2020 15:17:17 PAGE 1   
+C51 COMPILER V9.01   BOARD                                                                 07/15/2020 14:47:09 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE BOARD
@@ -62,7 +62,7 @@ line level    source
   47   1      
   48   1        temp_count = 24000000UL + ((IRTRIM - IRC_24M) * 0xD2F0UL);  //频率的偏差,计算出大概数据
   49   1        temp_count /= CLKDIV;                                     //频率太低需要分频
-C51 COMPILER V9.01   BOARD                                                                 07/03/2020 15:17:17 PAGE 2   
+C51 COMPILER V9.01   BOARD                                                                 07/15/2020 14:47:09 PAGE 2   
 
   50   1        
   51   1        if  (temp_count < 5764800UL)
@@ -126,7 +126,7 @@ line level    source
  107   1        P2M1 = 0x00;
  108   1        P3M0 = 0x00;
  109   1        P3M1 = 0x00;
-C51 COMPILER V9.01   BOARD                                                                 07/03/2020 15:17:17 PAGE 3   
+C51 COMPILER V9.01   BOARD                                                                 07/15/2020 14:47:09 PAGE 3   
 
  110   1        P4M0 = 0x00;
  111   1        P4M1 = 0x00;
@@ -190,7 +190,7 @@ line level    source
              ------------
  166          void EnableGlobalIRQ(void)
  167          {
-C51 COMPILER V9.01   BOARD                                                                 07/03/2020 15:17:17 PAGE 4   
+C51 COMPILER V9.01   BOARD                                                                 07/15/2020 14:47:09 PAGE 4   
 
  168   1        EA = 1;
  169   1      }

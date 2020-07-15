@@ -701,6 +701,11 @@
               <FileType>1</FileType>
               <FilePath>..\CODE\oled.c</FilePath>
             </File>
+            <File>
+              <FileName>outputdata.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\CODE\outputdata.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -745,6 +750,11 @@
               <FileName>oled.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\CODE\oled.h</FilePath>
+            </File>
+            <File>
+              <FileName>outputdata.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\CODE\outputdata.h</FilePath>
             </File>
           </Files>
         </Group>

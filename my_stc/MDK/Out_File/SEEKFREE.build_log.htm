@@ -22,7 +22,7 @@ Dialog DLL:      stcmon51.DLL V1, 0, 10, 0
  
 <h2>Project:</h2>
 F:\auto\STC_auto_car_H3\my_stc\MDK\SEEKFREE.uvproj
-Project File Date:  06/29/2020
+Project File Date:  07/15/2020
 
 <h2>Output:</h2>
 Rebuild target 'STC8A8K64S4'
@@ -60,6 +60,7 @@ compiling PID.c...
 compiling System_Init.c...
 compiling MyDebug.c...
 compiling oled.c...
+compiling outputdata.c...
 linking...
 *** WARNING L15: MULTIPLE CALL TO SEGMENT
     SEGMENT: ?PR?_SIMIIC_READ_REG?SEEKFREE_IIC
@@ -74,11 +75,7 @@ linking...
     CALLER1: ?PR?TM3_ISR?ISR
     CALLER2: ?C_C51STARTUP
 *** WARNING L15: MULTIPLE CALL TO SEGMENT
-    SEGMENT: ?PR?_IMUUPDATE?MPU6050
-    CALLER1: ?PR?TM3_ISR?ISR
-    CALLER2: ?C_C51STARTUP
-*** WARNING L15: MULTIPLE CALL TO SEGMENT
-    SEGMENT: ?PR?SQRT?SQRT
+    SEGMENT: ?PR?_ATAN2?ATAN2
     CALLER1: ?PR?TM3_ISR?ISR
     CALLER2: ?C_C51STARTUP
 *** WARNING L15: MULTIPLE CALL TO SEGMENT
@@ -86,17 +83,13 @@ linking...
     CALLER1: ?PR?TM3_ISR?ISR
     CALLER2: ?C_C51STARTUP
 *** WARNING L15: MULTIPLE CALL TO SEGMENT
-    SEGMENT: ?PR?_ATAN2?ATAN2
-    CALLER1: ?PR?TM3_ISR?ISR
-    CALLER2: ?C_C51STARTUP
-*** WARNING L15: MULTIPLE CALL TO SEGMENT
     SEGMENT: ?PR?_PID_REALIZE?PID
     CALLER1: ?PR?TM3_ISR?ISR
     CALLER2: ?C_C51STARTUP
-Program Size: data=9.4 xdata=3104 code=45215
+Program Size: data=9.4 xdata=2979 code=41937
 creating hex file from ".\Out_File\SEEKFREE"...
-".\Out_File\SEEKFREE" - 0 Error(s), 8 Warning(s).
-Build Time Elapsed:  00:00:14
+".\Out_File\SEEKFREE" - 0 Error(s), 6 Warning(s).
+Build Time Elapsed:  00:00:10
 </pre>
 </body>
 </html>

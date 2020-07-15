@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   PID                                                                   07/03/2020 15:17:29 PAGE 1   
+C51 COMPILER V9.01   PID                                                                   07/15/2020 14:47:17 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE PID
@@ -13,7 +13,7 @@ line level    source
    2           * @Description  : 
    3           * @Version      : 
    4           * @Date         : 2020-06-21 20:33:02
-   5           * @LastEditTime : 2020-06-22 14:32:44
+   5           * @LastEditTime : 2020-07-14 15:31:17
    6           */ 
    7          #include "PID.h"
    8          
@@ -23,12 +23,14 @@ line level    source
   11          float Angle[4]   = {0.15, 0, 0.06, 500};    // 角度环PID
   12          float Ang_Vel[4] = {0.20, 0.018, 0.001, 1000};    // 角速度环PID
   13          float Direct[4]  = {0.017, 0.001, 0.023, 70}; // 转向环PID 位置  0.017 0.02
-  14          /*******转向外环动态PID 中线法********/
-  15          float Turn[5][4] = {{100, 2, 1, 100},   //起步转向参数PID
-  16                  {100, 3, 2, 100},   //低速转向参数PID 
-  17                  {100, 4, 3, 100},   //中速转向参数PID 
-  18                  {100, 5, 4, 100},   //高速转向参数PID 
-  19                  {200, 10, 8, 100}};  //环岛转向参数PID
+  14          /********* 转向外环动态PID ********/     //由于是串级PID,所以称外环此处的 P   1/P为动
+             -态P的系数    
+  15          float Turn[5][4] = {{100, 2, 1, 100},   //起步转向参数PID              I    为动态P的最小限�
+             -�(始终不会到达的最小值)
+  16                      {100, 3, 2, 100},   //低速转向参数PID 
+  17                      {100, 4, 3, 100},   //中速转向参数PID 
+  18                      {100, 5, 4, 100},   //高速转向参数PID 
+  19                      {200, 10, 8, 100}}; //环岛转向参数PID
   20          float TURN_lim=165;//转向外环输出限制
   21          // PID参数初始化
   22          void PID_Parameter_Init(PID *sptr)
@@ -38,123 +40,124 @@ line level    source
   26   1        sptr->PrevError = 0;  //Error[-2] 
   27   1        sptr->LastData  = 0;
   28   1      }
-  29          // 位置式动态PID控制
+  29          // 位置式动态PID控制为转向曲率设计  
   30          int32 PlacePID_Control(PID *sprt, float *PID, int32 NowPiont, int32 SetPoint)
   31          {
   32   1        //定义为寄存器变量，只能用于整型和字符型变量，提高运算速度
   33   1        int32 iError, //当前误差
   34   1            Actual; //最后得出的实际输出值
   35   1        float Kp;   //动态P
-  36   1        iError = SetPoint - NowPiont; //计算当前误差
-  37   1        sprt->SumError += iError*0.01;
-  38   1        if (sprt->SumError >= PID[KT])
-  39   1        {
-  40   2          sprt->SumError = PID[KT];
-  41   2        }
-  42   1        else if (sprt->SumError <=-PID[KT])
-  43   1        {
-  44   2          sprt->SumError = -PID[KT];
-  45   2        }
-  46   1                
-  47   1        Kp = 1.0 * (iError*iError) / PID[KP] + PID[KI]; //P值与差值成二次函数关系，此处P和I不是P
-             -ID参数，而是动态PID参数，要注意！！！
-  48   1        
-  49   1        Actual = Kp * iError
-  50   1             + PID[KD] * ((0.8*iError + 0.2*sprt->LastError) - sprt->LastError);//只用PD
-  51   1        sprt->LastError = iError;   //更新上次误差
-C51 COMPILER V9.01   PID                                                                   07/03/2020 15:17:29 PAGE 2   
+  36   1        iError = SetPoint - NowPiont; //更新当前误差
+  37   1        /*
+  38   1        sprt->SumError += iError*0.01;
+  39   1        if (sprt->SumError >= PID[KT])    //误差和限幅  -PID[KT] 到  PID[KT]
+  40   1        {
+  41   1          sprt->SumError = PID[KT];
+  42   1        }
+  43   1        else if (sprt->SumError <=-PID[KT])
+  44   1        {
+  45   1          sprt->SumError = -PID[KT];
+  46   1        }
+  47   1          */
+  48   1        Kp = 1.0 * (iError*iError) / PID[KP] + PID[KI]; //P值与差值成二次函数关系，始终大于0，�
+             -�处P和I不是PID参数，而是动态PID参数，要注意！！！
+  49   1        
+C51 COMPILER V9.01   PID                                                                   07/15/2020 14:47:17 PAGE 2   
 
-  52   1      
-  53   1      //  Actual += sprt->SumError*0.1;
+  50   1        Actual = Kp * iError
+  51   1               + PID[KD] * (0.8*(iError - sprt->LastError));//只用PD   原式为0.8*iError+0.2*sprt->LastError-
+             - sqrt->LastError;   
+  52   1          sprt->LastError = iError;           // 更新过去的误差
+  53   1          //  Actual += sprt->SumError*0.1;不用I所以不需要误差和
   54   1        Actual = range_protect_main(Actual, -TURN_lim, TURN_lim);
-  55   1      
-  56   1        return Actual;
-  57   1      }
-  58          
-  59          //转向位置式PID控制
-  60          int32 PID_Realize_D(PID *sptr, float *PID, int32 NowData, int32 Point)
-  61          {
-  62   1        //当前误差，定义为寄存器变量，只能用于整型和字符型变量，提高运算速度
-  63   1        int32 iError, // 当前误差
-  64   1           Realize; // 最后得出的实际增量
-  65   1              float SetD;
-  66   1        iError = Point - NowData; // 计算当前误差
-  67   1        sptr->SumError += PID[KI] * iError; // 误差积分
-  68   1        if (sptr->SumError >= PID[KT])
-  69   1        {
-  70   2          sptr->SumError = PID[KT];
-  71   2        }
-  72   1        else if (sptr->SumError <= -PID[KT])
-  73   1        {
-  74   2          sptr->SumError = -PID[KT];
-  75   2        }
-  76   1              SetD =PID[KD];
-  77   1                
-  78   1              if(Difference*GYRO_Real.Z>0)
-  79   1               SetD =0;
-  80   1      //        Realize = PID[KP] * iError
-  81   1      //      + sptr->SumError
-  82   1      //      + SetD * GYRO_Real.Z;
-  83   1        Realize = PID[KP] * iError
-  84   1            + sptr->SumError
-  85   1            + SetD * (iError - sptr->LastError);
-  86   1        sptr->PrevError = sptr->LastError;  // 更新前次误差
-  87   1        sptr->LastError = iError;       // 更新上次误差
-  88   1        sptr->LastData  = NowData;      // 更新上次数据
-  89   1      
-  90   1        return Realize; // 返回实际值
-  91   1      }
-  92          // 位置式PID控制
-  93          int32 PID_Realize(PID *sptr, float *PID, int32 NowData, int32 Point)
-  94          {
-  95   1        //当前误差，定义为寄存器变量，只能用于整型和字符型变量，提高运算速度
-  96   1        int32 iError, // 当前误差
-  97   1           Realize; // 最后得出的实际增量
-  98   1      
-  99   1        iError = Point - NowData; // 计算当前误差
- 100   1        sptr->SumError += PID[KI] * iError; // 误差积分
- 101   1        if (sptr->SumError >= PID[KT])
- 102   1        {
- 103   2          sptr->SumError = PID[KT];
- 104   2        }
- 105   1        else if (sptr->SumError <= -PID[KT])
- 106   1        {
- 107   2          sptr->SumError = -PID[KT];
- 108   2        }
- 109   1      
- 110   1        Realize = PID[KP] * iError
- 111   1            + sptr->SumError
- 112   1            + PID[KD] * (iError - sptr->LastError);
- 113   1        sptr->PrevError = sptr->LastError;  // 更新前次误差
-C51 COMPILER V9.01   PID                                                                   07/03/2020 15:17:29 PAGE 3   
+  55   1        return Actual;
+  56   1      }
+  57          
+  58          //转向位置式PID控制
+  59          int32 PID_Realize_D(PID *sptr, float *PID, int32 NowData, int32 Point)
+  60          {
+  61   1        //当前误差，定义为寄存器变量，只能用于整型和字符型变量，提高运算速度
+  62   1        int32 iError, // 当前误差
+  63   1           Realize; // 最后得出的实际增量
+  64   1              float SetD;
+  65   1        iError = Point - NowData; // 计算当前误差
+  66   1        sptr->SumError += PID[KI] * iError; // 误差积分
+  67   1        if (sptr->SumError >= PID[KT])
+  68   1        {
+  69   2          sptr->SumError = PID[KT];
+  70   2        }
+  71   1        else if (sptr->SumError <= -PID[KT])
+  72   1        {
+  73   2          sptr->SumError = -PID[KT];
+  74   2        }
+  75   1              SetD =PID[KD];
+  76   1                
+  77   1              if(Difference*GYRO_Real.Z>0)      //如果陀螺仪转角和电磁差表明的转角相同，则�
+             -�需要 D 调节
+  78   1               SetD =0;
+  79   1      //        Realize = PID[KP] * iError
+  80   1      //      + sptr->SumError
+  81   1      //      + SetD * GYRO_Real.Z;
+  82   1        Realize = PID[KP] * iError                         //P
+  83   1            + sptr->SumError                           //I
+  84   1            + SetD * (iError - sptr->LastError);       //D
+  85   1        //sptr->PrevError = sptr->LastError;  // 更新前次误差
+  86   1        sptr->LastError = iError;       // 更新上次误差
+  87   1        sptr->LastData  = NowData;      // 更新上次数据
+  88   1      
+  89   1        return Realize; // 返回实际值
+  90   1      }
+  91          // 位置式PID控制
+  92          int32 PID_Realize(PID *sptr, float *PID, int32 NowData, int32 Point)
+  93          {
+  94   1        //当前误差，定义为寄存器变量，只能用于整型和字符型变量，提高运算速度
+  95   1        int32 iError, // 当前误差
+  96   1           Realize; // 最后得出的实际增量
+  97   1      
+  98   1        iError = Point - NowData; // 计算当前误差
+  99   1        sptr->SumError += PID[KI] * iError; // 误差积分
+ 100   1        if (sptr->SumError >= PID[KT])
+ 101   1        {
+ 102   2          sptr->SumError = PID[KT];
+ 103   2        }
+ 104   1        else if (sptr->SumError <= -PID[KT])
+ 105   1        {
+ 106   2          sptr->SumError = -PID[KT];
+ 107   2        }
+ 108   1      
+ 109   1        Realize = PID[KP] * iError
+C51 COMPILER V9.01   PID                                                                   07/15/2020 14:47:17 PAGE 3   
 
- 114   1        sptr->LastError = iError;       // 更新上次误差
- 115   1        sptr->LastData  = NowData;      // 更新上次数据
- 116   1      
- 117   1        return Realize; // 返回实际值
- 118   1      }
- 119          // 增量式PID电机控制
- 120          int32 PID_Increase(PID *sptr, float *PID, int32 NowData, int32 Point)
- 121          {
- 122   1        //当前误差，定义为寄存器变量，只能用于整型和字符型变量，提高运算速度
- 123   1        int32 iError, //当前误差
- 124   1          Increase; //最后得出的实际增量
- 125   1      
- 126   1        iError = Point - NowData; // 计算当前误差
- 127   1        Increase =  PID[KP] * (iError - sptr->LastError)
- 128   1              + PID[KI] * iError
- 129   1              + PID[KD] * (iError - 2 * sptr->LastError + sptr->PrevError);
- 130   1        
- 131   1        sptr->PrevError = sptr->LastError;  // 更新前次误差
- 132   1        sptr->LastError = iError;       // 更新上次误差
- 133   1        sptr->LastData  = NowData;      // 更新上次数据
- 134   1        
- 135   1        return Increase;  // 返回增量
- 136   1      }//*/
+ 110   1            + sptr->SumError
+ 111   1            + PID[KD] * (iError - sptr->LastError);
+ 112   1        sptr->PrevError = sptr->LastError;  // 更新前次误差
+ 113   1        sptr->LastError = iError;       // 更新上次误差
+ 114   1        sptr->LastData  = NowData;      // 更新上次数据
+ 115   1      
+ 116   1        return Realize; // 返回实际值
+ 117   1      }
+ 118          // 增量式PID电机控制
+ 119          int32 PID_Increase(PID *sptr, float *PID, int32 NowData, int32 Point)
+ 120          {
+ 121   1        //当前误差，定义为寄存器变量，只能用于整型和字符型变量，提高运算速度
+ 122   1        int32 iError, //当前误差
+ 123   1          Increase; //最后得出的实际增量
+ 124   1      
+ 125   1        iError = Point - NowData; // 计算当前误差
+ 126   1        Increase =  PID[KP] * (iError - sptr->LastError)
+ 127   1              + PID[KI] * iError
+ 128   1              + PID[KD] * (iError - 2 * sptr->LastError + sptr->PrevError);
+ 129   1        
+ 130   1        sptr->PrevError = sptr->LastError;  // 更新前次误差
+ 131   1        sptr->LastError = iError;       // 更新上次误差
+ 132   1        sptr->LastData  = NowData;      // 更新上次数据
+ 133   1        
+ 134   1        return Increase;  // 返回增量
+ 135   1      }//*/
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   2226    ----
+   CODE SIZE        =   1927    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =    244      96
    PDATA SIZE       =   ----    ----

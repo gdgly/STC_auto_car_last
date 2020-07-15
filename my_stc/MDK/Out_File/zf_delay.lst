@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   ZF_DELAY                                                              07/03/2020 15:17:22 PAGE 1   
+C51 COMPILER V9.01   ZF_DELAY                                                              07/15/2020 14:47:14 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE ZF_DELAY
@@ -62,7 +62,7 @@ line level    source
   47          
   48          //--------------------------------------------------------------------------------------------------------
              ------------
-C51 COMPILER V9.01   ZF_DELAY                                                              07/03/2020 15:17:22 PAGE 2   
+C51 COMPILER V9.01   ZF_DELAY                                                              07/15/2020 14:47:14 PAGE 2   
 
   49          //  @brief      软件延时函数//内部时钟频率33.1776Mhz
   50          //  @param      x             需要延时的时间（us）

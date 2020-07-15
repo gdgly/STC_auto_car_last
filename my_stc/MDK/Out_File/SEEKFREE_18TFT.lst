@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 1   
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE SEEKFREE_18TFT
@@ -62,7 +62,7 @@ line level    source
   48          { 
   49   1          TFT_CS(0);
   50   1        TFT_DC(0);
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 2   
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 2   
 
   51   1        spi_mosi(dat);
   52   1          TFT_CS(1);
@@ -126,7 +126,7 @@ line level    source
  108   1      #elif(2 == TFT_DISPLAY_DIR || 3 == TFT_DISPLAY_DIR)
                   lcd_writeIndex(0x2a);
                 lcd_writeData(0x00);
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 3   
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 3   
 
                 lcd_writeData(x_start+1);
                 lcd_writeData(0x0);
@@ -190,7 +190,7 @@ line level    source
  166   1          lcd_writeIndex(0xB2); 
  167   1          lcd_writeData(0x01); 
  168   1          lcd_writeData(0x2C); 
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 4   
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 4   
 
  169   1          lcd_writeData(0x2D); 
  170   1          
@@ -254,7 +254,7 @@ line level    source
  228   1          lcd_writeData(0x10); 
  229   1          
  230   1          lcd_writeIndex(0xe1); 
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 5   
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 5   
 
  231   1          lcd_writeData(0x0f); 
  232   1          lcd_writeData(0x1b); 
@@ -318,7 +318,7 @@ line level    source
  288          
  289          
  290          //--------------------------------------------------------------------------------------------------------
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 6   
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 6   
 
              ------------
  291          //  @brief      液晶显示字符
@@ -382,7 +382,7 @@ line level    source
  345          //  Sample usage:               lcd_showint8(0,0,x);//x为int8类型
  346          //--------------------------------------------------------------------------------------------------------
              ------------
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 7   
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 7   
 
  347          void lcd_showint8(uint16 x,uint16 y,int8 dat)
  348          {
@@ -446,7 +446,7 @@ line level    source
  403          //  @return     void
  404          //  @since      v1.0
  405          //  Sample usage:               lcd_showint16(0,0,x);//x为int16类型
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 8   
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 8   
 
  406          //--------------------------------------------------------------------------------------------------------
              ------------
@@ -510,7 +510,7 @@ line level    source
  461          //  @brief      液晶显示32位有符号(去除整数部分无效的0)
  462          //  @param      x               坐标x方向的起点 参数范围 0 -（TFT_X_MAX-1）
  463          //  @param      y               坐标y方向的起点 参数范围 0 -（TFT_Y_MAX/16-1）
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 9   
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 9   
 
  464          //  @param      dat             需要显示的变量，数据类型uint32
  465          //  @param      num             需要显示的位数 最高10位  不包含正负号
@@ -574,7 +574,7 @@ line level    source
  520   1              
  521   1          if(0>dat)   length = zf_sprintf( &buff[0],"%f",dat);//负数
  522   1          else
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 10  
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 10  
 
  523   1          {
  524   2              length = zf_sprintf( &buff[1],"%f",dat);
@@ -638,7 +638,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    XDATA SIZE       =   ----     178
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
-C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/03/2020 15:17:23 PAGE 11  
+C51 COMPILER V9.01   SEEKFREE_18TFT                                                        07/15/2020 14:47:14 PAGE 11  
 
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----

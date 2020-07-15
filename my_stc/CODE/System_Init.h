@@ -18,7 +18,7 @@ extern int8 K1,K2,K3;
 extern float LAD,RAD,LADC,RADC;
 extern int   I_LAD,I_LADC,I_RADC,I_RAD,
              O_I;
-extern float Voltage;
+extern float Voltage[2];
 void System_Init();		 //所有模块初始化
 void Read_Switch();
 

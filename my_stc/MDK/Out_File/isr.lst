@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   ISR                                                                   07/03/2020 15:17:27 PAGE 1   
+C51 COMPILER V9.01   ISR                                                                   07/15/2020 14:47:16 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE ISR
@@ -62,7 +62,7 @@ line level    source
   49          //UART2中断
   50          void Uart2Isr() interrupt 8
   51          {
-C51 COMPILER V9.01   ISR                                                                   07/03/2020 15:17:27 PAGE 2   
+C51 COMPILER V9.01   ISR                                                                   07/15/2020 14:47:16 PAGE 2   
 
   52   1        if (UART2_GET_TX_FLAG)
   53   1        {
@@ -119,14 +119,14 @@ line level    source
  104   2          pca_reload_counter(PCA_0);
  105   2      
  106   2          //线性CCD采集数据
- 107   2          ccd_collect();
+ 107   2      //    ccd_collect();
  108   2          //采集完成标志位置1
- 109   2          tsl1401_finish_flag = 1;
+ 109   2        //  tsl1401_finish_flag = 1;
  110   2        }
  111   1      
  112   1        if (PCA1_GET_FLAG)
  113   1        {
-C51 COMPILER V9.01   ISR                                                                   07/03/2020 15:17:27 PAGE 3   
+C51 COMPILER V9.01   ISR                                                                   07/15/2020 14:47:16 PAGE 3   
 
  114   2          //清除中断标志位
  115   2          PCA_CLEAR_FLAG(PCA_1);
@@ -190,7 +190,7 @@ line level    source
  173   1        if (Time_100ms == 50)
  174   1        {
  175   2          Time_100ms = 0;
-C51 COMPILER V9.01   ISR                                                                   07/03/2020 15:17:27 PAGE 4   
+C51 COMPILER V9.01   ISR                                                                   07/15/2020 14:47:16 PAGE 4   
 
  176   2          Speed_Flag = 1; // 速度100ms控制一次
  177   2        }
@@ -213,7 +213,7 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    409    ----
+   CODE SIZE        =    400    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =      4    ----
    PDATA SIZE       =   ----    ----

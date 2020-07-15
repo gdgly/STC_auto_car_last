@@ -41,8 +41,8 @@ extern int32
 	Theory_Duty,
 	Curvature;
 extern float Target_Angle_min, //跑动前倾最大角度
-	Target_Angle_max;		   //跑动后仰最大角度
-extern char Speed_Flag, Angle_Flag, Ang_Velocity_Flag, Roundabout_cnt, In_Roundabout_Flag, Out_Roundabout_Flag, DMP_Flag;
+						 Target_Angle_max;		   //跑动后仰最大角度
+extern char Speed_Flag, Angle_Flag, Ang_Velocity_Flag, Roundabout_cnt, In_Roundabout_Flag, Out_Roundabout_Flag;
 int32 range_protect(int32 duty, int32 min, int32 max);		//限幅保护
 int32 range_protect_main(int32 duty, int32 min, int32 max); //限幅保护2
 void Balance_Control(void);

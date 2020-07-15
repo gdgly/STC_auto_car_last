@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   ZF_PCA_PIT                                                            07/03/2020 15:17:20 PAGE 1   
+C51 COMPILER V9.01   ZF_PCA_PIT                                                            07/15/2020 14:47:13 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE ZF_PCA_PIT
@@ -62,7 +62,7 @@ line level    source
   47   4            }
   48   3            case PWM_MODE_N0_ISR:
   49   3            {
-C51 COMPILER V9.01   ZF_PCA_PIT                                                            07/03/2020 15:17:20 PAGE 2   
+C51 COMPILER V9.01   ZF_PCA_PIT                                                            07/15/2020 14:47:13 PAGE 2   
 
   50   4              CCAPM0 = 0x42;
   51   4              break;
@@ -126,7 +126,7 @@ line level    source
  107   1        uint16 dat;
  108   1        if(PCA_1 == pca_n)
  109   1        {
-C51 COMPILER V9.01   ZF_PCA_PIT                                                            07/03/2020 15:17:20 PAGE 3   
+C51 COMPILER V9.01   ZF_PCA_PIT                                                            07/15/2020 14:47:13 PAGE 3   
 
  110   2          dat = (uint8)CCAP0H << 8;
  111   2          dat = ((uint8)CCAP0L) | dat;
@@ -190,7 +190,7 @@ line level    source
  165   1      
  166   1        if(PCA_2 == pca_n)  
  167   1        {
-C51 COMPILER V9.01   ZF_PCA_PIT                                                            07/03/2020 15:17:20 PAGE 4   
+C51 COMPILER V9.01   ZF_PCA_PIT                                                            07/15/2020 14:47:13 PAGE 4   
 
  168   2          time_ms = (sys_clk/(12*(1000/time_ms)));
  169   2          pca_time_ms[2] = time_ms;
@@ -254,7 +254,7 @@ line level    source
  225   1        if(PCA_3 == pca_n)
  226   1        {
  227   2          //ÖØÔØ¼ÆÊýÆ÷
-C51 COMPILER V9.01   ZF_PCA_PIT                                                            07/03/2020 15:17:20 PAGE 5   
+C51 COMPILER V9.01   ZF_PCA_PIT                                                            07/15/2020 14:47:13 PAGE 5   
 
  228   2          CCAP3L = ccp_value[3];
  229   2          CCAP3H = ccp_value[3] >> 8;

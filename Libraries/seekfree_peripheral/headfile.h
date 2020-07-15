@@ -20,18 +20,18 @@
 #include "zf_nvic.h"
 
 
-#include "SEEKFREE_FONT.h"
-#include "SEEKFREE_18TFT.h"
+//#include "SEEKFREE_FONT.h"
+//#include "SEEKFREE_18TFT.h"
 #include "SEEKFREE_IIC.h"
-#include "SEEKFREE_ICM20602.h"
-#include "SEEKFREE_TSL1401.h"
-#include "SEEKFREE_IPS114_SPI.h"
+//#include "SEEKFREE_ICM20602.h"
+//#include "SEEKFREE_TSL1401.h"
+//#include "SEEKFREE_IPS114_SPI.h"
 //#include "SEEKFREE_MPU6050.h"
 //#include "SEEKFREE_OLED.h"
-#include "SEEKFREE_ABSOLUTE_ENCODER.h"
-#include "SEEKFREE_WIRELESS.h"
-#include "SEEKFREE_PRINTF.h"
-#include "SEEKFREE_VIRSCO.h"
+//#include "SEEKFREE_ABSOLUTE_ENCODER.h"
+//#include "SEEKFREE_WIRELESS.h"
+//#include "SEEKFREE_PRINTF.h"
+//#include "SEEKFREE_VIRSCO.h"
 
 #include "isr.h"
 #include <string.h>
@@ -46,5 +46,5 @@
 #include "System_Init.h"
 #include "Balance.h"
 #include "MyDebug.h"
-
+#include "outputdata.h"
 #endif

@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 1   
+C51 COMPILER V9.01   ZF_GPIO                                                               07/15/2020 14:47:13 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE ZF_GPIO
@@ -62,7 +62,7 @@ line level    source
   46          //  @param      pin         选择引脚（P0_0-P5_4）
   47          //  @param      mode        引脚模式 GPIO:准双向口, GPO_PP:推挽输出, GPI_IMPEDANCE:高阻输入, GPI_OD:开漏输
              -出
-C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 2   
+C51 COMPILER V9.01   ZF_GPIO                                                               07/15/2020 14:47:13 PAGE 2   
 
   48          //  @return     void
   49          //  Sample usage:           gpio_mode(P0_0,GPIO);       // 设置P0.0设置为双向IO
@@ -126,7 +126,7 @@ line level    source
  106   3            {
  107   4              P1M1 |=   1 << (pin & 0xF);
  108   4              P1M0 |=   1 << (pin & 0xF);
-C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 3   
+C51 COMPILER V9.01   ZF_GPIO                                                               07/15/2020 14:47:13 PAGE 3   
 
  109   4              break;
  110   4            }
@@ -190,7 +190,7 @@ line level    source
  168   3            {
  169   4              P3M1 |=   1 << (pin & 0xF);
  170   4              P3M0 |=   1 << (pin & 0xF);
-C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 4   
+C51 COMPILER V9.01   ZF_GPIO                                                               07/15/2020 14:47:13 PAGE 4   
 
  171   4              break;
  172   4            }
@@ -254,7 +254,7 @@ line level    source
  230   3            {
  231   4              P5M1 |=   1 << (pin & 0xF);
  232   4              P5M0 |=   1 << (pin & 0xF);
-C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 5   
+C51 COMPILER V9.01   ZF_GPIO                                                               07/15/2020 14:47:13 PAGE 5   
 
  233   4              break;
  234   4            }
@@ -318,7 +318,7 @@ line level    source
  292   3            {
  293   4              P7M1 |=   1 << (pin & 0xF);
  294   4              P7M0 |=   1 << (pin & 0xF);
-C51 COMPILER V9.01   ZF_GPIO                                                               07/03/2020 15:17:21 PAGE 6   
+C51 COMPILER V9.01   ZF_GPIO                                                               07/15/2020 14:47:13 PAGE 6   
 
  295   4              break;
  296   4            }

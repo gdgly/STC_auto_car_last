@@ -1,0 +1,82 @@
+C51 COMPILER V9.01   OUTPUTDATA                                                            07/15/2020 14:47:17 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE OUTPUTDATA
+OBJECT MODULE PLACED IN .\Out_File\outputdata.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\CODE\outputdata.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\Librari
+                    -es\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\USER\inc;..\USER\src;..\CODE) DEB
+                    -UG OBJECTEXTEND PRINT(.\Out_File\outputdata.lst) TABS(2) OBJECT(.\Out_File\outputdata.obj)
+
+line level    source
+
+   1          #include "outputdata.h"
+   2          
+   3          float OutData[4] = {0};
+   4          
+   5          unsigned short My_CRC_CHECK(unsigned char *Buf, unsigned char CRC_CNT)
+   6          {
+   7   1          unsigned short CRC_Temp;
+   8   1          unsigned char i,j;
+   9   1          CRC_Temp = 0xffff;
+  10   1      
+  11   1          for (i=0;i<CRC_CNT; i++){      
+  12   2              CRC_Temp ^= Buf[i];
+  13   2              for (j=0;j<8;j++) {
+  14   3                  if (CRC_Temp & 0x01)
+  15   3                      CRC_Temp = (CRC_Temp >>1 ) ^ 0xa001;
+  16   3                  else
+  17   3                      CRC_Temp = CRC_Temp >> 1;
+  18   3              }
+  19   2          }
+  20   1          return(CRC_Temp);
+  21   1      }
+  22          
+  23          void OutPut_Data(void)
+  24          {
+  25   1        int temp[4] = {0};
+  26   1        unsigned int temp1[4] = {0};
+  27   1        unsigned char databuf[10] = {0};
+  28   1        unsigned char i;
+  29   1        unsigned short CRC16 = 0;
+  30   1        for(i=0;i<4;i++)
+  31   1         {
+  32   2          
+  33   2          temp[i]  = (int)OutData[i];
+  34   2          temp1[i] = (unsigned int)temp[i];
+  35   2          
+  36   2         }
+  37   1         
+  38   1        for(i=0;i<4;i++) 
+  39   1        {
+  40   2          databuf[i*2]   = (unsigned char)(temp1[i]%256);
+  41   2          databuf[i*2+1] = (unsigned char)(temp1[i]/256);
+  42   2        }
+  43   1        
+  44   1        CRC16 = My_CRC_CHECK(databuf,8);
+  45   1        databuf[8] = CRC16%256;
+  46   1        databuf[9] = CRC16/256;
+  47   1        
+  48   1        for(i=0;i<10;i++)
+  49   1          uart_putchar(UART_4,databuf[i]);//此函数可能需要根据不同的库更改参数
+  50   1      }
+  51          /*主函数中这样调用
+  52          OutData[0]=angle_m;  // angle_m是采集的数据
+  53          OutData[1]=funsion;
+C51 COMPILER V9.01   OUTPUTDATA                                                            07/15/2020 14:47:17 PAGE 2   
+
+  54          OutPut_Data();  
+  55          */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    458    ----
+   CONSTANT SIZE    =     26    ----
+   XDATA SIZE       =     16      36
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

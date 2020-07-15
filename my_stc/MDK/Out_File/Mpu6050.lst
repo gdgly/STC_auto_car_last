@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 1   
+C51 COMPILER V9.01   MPU6050                                                               07/15/2020 14:47:16 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE MPU6050
@@ -13,7 +13,7 @@ line level    source
    2           * @Description  : 
    3           * @Version      : 
    4           * @Date         : 2020-06-18 16:23:44
-   5           * @LastEditTime : 2020-06-27 22:30:17
+   5           * @LastEditTime : 2020-07-13 20:38:22
    6           */
    7          #include "Mpu6050.h"
    8          
@@ -62,7 +62,7 @@ line level    source
   50           * 函数名：MPU6050_Offset
   51           * 描述  ：传感器采集零偏
   52           * 输入  ：无
-C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 2   
+C51 COMPILER V9.01   MPU6050                                                               07/15/2020 14:47:16 PAGE 2   
 
   53           * 输出  ：无
   54           * 调用  ：内部调用
@@ -126,7 +126,7 @@ line level    source
  112   2          ACC->Z = GetData(MPU_ACCEL_ZOUTH_REG);
  113   2      
  114   2          GYRO->X = GetData(MPU_GYRO_XOUTH_REG); // 获取陀螺仪原始数据并归一化
-C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 3   
+C51 COMPILER V9.01   MPU6050                                                               07/15/2020 14:47:16 PAGE 3   
 
  115   2          GYRO->Y = GetData(MPU_GYRO_YOUTH_REG);
  116   2          GYRO->Z = GetData(MPU_GYRO_ZOUTH_REG);
@@ -190,7 +190,7 @@ line level    source
  173   2          temp5 += GYRO_Y_BUF[i];
  174   2          temp6 += GYRO_Z_BUF[i];
  175   2        }
-C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 4   
+C51 COMPILER V9.01   MPU6050                                                               07/15/2020 14:47:16 PAGE 4   
 
  176   1      
  177   1        ACC_Real.X = temp1 / ACC_FILTER_NUM / AcceRatio;
@@ -254,7 +254,7 @@ line level    source
  234            }
  235            
  236              //2.测量更新(校正): X(k|k) = X(k|k-1)+K(k)*(Z(k)-H(k)*X(k|k-1)) 
-C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 5   
+C51 COMPILER V9.01   MPU6050                                                               07/15/2020 14:47:16 PAGE 5   
 
  237              Posterior_Estimation  = Priori_Estimation + KalmanGain * (ACC_Angle - Priori_Estimation );
  238            if (Posterior_Estimation != Posterior_Estimation)
@@ -278,112 +278,132 @@ line level    source
  256            }
  257          }
  258          */
- 259          /*
- 260           * 函数名：Get_Attitude
- 261           * 描述  ：姿态解算
- 262           * 输入  ：无
- 263           * 输出  ：无
- 264           * 调用  ：外部调用
- 265           */
- 266          void Get_Attitude(void) // 姿态解算
- 267          {
- 268   1        IMUupdate(GYRO_Real.X * Gyro_Gr * GyroRatio,
- 269   1              GYRO_Real.Y * Gyro_Gr * GyroRatio,
- 270   1              GYRO_Real.Z * Gyro_Gr * GyroRatio,
- 271   1              ACC_Real.X * AcceRatio,
- 272   1              ACC_Real.Y * AcceRatio,
- 273   1              ACC_Real.Z * AcceRatio); // 姿态解算出欧拉角
- 274   1      }
- 275          
- 276          //===============================四元素============================================
- 277          #define Kp 1.6f              //10.0f              // proportional gain governs rate of convergence to accelerom
-             -eter/magnetometer
- 278          #define Ki 0.001f            //1.2f // //0.008f   // integral gain governs rate of convergence of gyroscope bi
-             -ases
- 279          #define halfT 0.005f           // half the sample period采样周期的一半
- 280          float q0 = 1, q1 = 0, q2 = 0, q3 = 0;  // quaternion elements representing the estimated orientation
- 281          float exInt = 0, eyInt = 0, ezInt = 0; // scaled integral error
- 282          /*
- 283           * 函数名：IMUupdate
- 284           * 描述  ：四元素解算欧拉角
- 285           * 输入  ：陀螺仪 加速度计
- 286           * 输出  ：无
- 287           * 调用  ：内部调用
- 288           */
- 289          void IMUupdate(float gx, float gy, float gz, float ax, float ay, float az)
- 290          {
- 291   1        float norm;
- 292   1        float vx, vy, vz;
- 293   1        float ex, ey, ez;
- 294   1      
- 295   1        // 先把这些用得到的值算好
- 296   1        float q0q0 = q0 * q0;
-C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 6   
+ 259          
+ 260          /*
+ 261           * 函数名：Get_Attitude
+ 262           * 描述  ：四元素算法姿态解算
+ 263           * 输入  ：无
+ 264           * 输出  ：无
+ 265           * 调用  ：外部调用
+ 266           */
+ 267           
+ 268          //void Get_Attitude(void) // 姿态解算
+ 269          //{
+ 270          //  IMUupdate(GYRO_Real.X * Gyro_Gr * GyroRatio,
+ 271          //        GYRO_Real.Y * Gyro_Gr * GyroRatio,
+ 272          //        GYRO_Real.Z * Gyro_Gr * GyroRatio,
+ 273          //        ACC_Real.X * AcceRatio,
+ 274          //        ACC_Real.Y * AcceRatio,
+ 275          //        ACC_Real.Z * AcceRatio); // 姿态解算出欧拉角
+ 276          //}
+ 277          
+ 278          //===============================四元素============================================
+ 279          //#define Kp 1.6f              //10.0f              // proportional gain governs rate of convergence to acceler
+             -ometer/magnetometer
+ 280          //#define Ki 0.001f            //1.2f // //0.008f   // integral gain governs rate of convergence of gyroscope 
+             -biases
+ 281          //#define halfT 0.005f           // half the sample period采样周期的一半
+ 282          //float q0 = 1, q1 = 0, q2 = 0, q3 = 0;  // quaternion elements representing the estimated orientation
+ 283          //float exInt = 0, eyInt = 0, ezInt = 0; // scaled integral error
+ 284          /*
+ 285           * 函数名：IMUupdate
+ 286           * 描述  ：四元素解算欧拉角
+ 287           * 输入  ：陀螺仪 加速度计
+ 288           * 输出  ：无
+ 289           * 调用  ：内部调用
+ 290           */
+ 291          //void IMUupdate(float gx, float gy, float gz, float ax, float ay, float az)
+ 292          //{
+ 293          //  float norm;
+ 294          //  float vx, vy, vz;
+ 295          //  float ex, ey, ez;
+ 296          
+C51 COMPILER V9.01   MPU6050                                                               07/15/2020 14:47:16 PAGE 6   
 
- 297   1        float q0q1 = q0 * q1;
- 298   1        float q0q2 = q0 * q2;
- 299   1        float q1q1 = q1 * q1;
- 300   1        float q1q3 = q1 * q3;
- 301   1        float q2q2 = q2 * q2;
- 302   1        float q2q3 = q2 * q3;
- 303   1        float q3q3 = q3 * q3;
- 304   1      
- 305   1        if (ax * ay * az == 0)
- 306   1        {
- 307   2          return;
- 308   2        }
- 309   1      
- 310   1        norm = sqrt(ax * ax + ay * ay + az * az); // acc数据归一化
- 311   1        ax = ax / norm;
- 312   1        ay = ay / norm;
- 313   1        az = az / norm;
- 314   1      
- 315   1        // estimated direction of gravity and flux (v and w)  估计重力方向和流量/变迁
- 316   1        vx = 2 * (q1q3 - q0q2); // 四元素中xyz的表示
- 317   1        vy = 2 * (q0q1 + q2q3);
- 318   1        vz = q0q0 - q1q1 - q2q2 + q3q3;
- 319   1      
- 320   1        // error is sum of cross product between reference direction of fields and direction measured by sensors
- 321   1        ex = (ay * vz - az * vy); // 向量外积在相减得到差分就是误差
- 322   1        ey = (az * vx - ax * vz);
- 323   1        ez = (ax * vy - ay * vx);
- 324   1      
- 325   1        exInt = exInt + ex * Ki; // 对误差进行积分
- 326   1        eyInt = eyInt + ey * Ki;
- 327   1        ezInt = ezInt + ez * Ki;
- 328   1      
- 329   1        // adjusted gyroscope measurements
- 330   1        gx = gx + Kp * ex + exInt; // 将误差PI后补偿到陀螺仪，即补偿零点漂移
- 331   1        gy = gy + Kp * ey + eyInt;
- 332   1        gz = gz + Kp * ez + ezInt; // 这里的gz由于没有观测者进行矫正会产生漂移，表现出来�
-             -��就是积分自增或自减
- 333   1      
- 334   1        // integrate quaternion rate and normalise  // 四元素的微分方程
- 335   1        q0 = q0 + (-q1 * gx - q2 * gy - q3 * gz) * halfT;
- 336   1        q1 = q1 + (q0 * gx + q2 * gz - q3 * gy) * halfT;
- 337   1        q2 = q2 + (q0 * gy - q1 * gz + q3 * gx) * halfT;
- 338   1        q3 = q3 + (q0 * gz + q1 * gy - q2 * gx) * halfT;
- 339   1      
- 340   1        // normalise quaternion
- 341   1        norm = sqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
- 342   1        q0 = q0 / norm;
- 343   1        q1 = q1 / norm;
- 344   1        q2 = q2 / norm;
- 345   1        q3 = q3 / norm;
- 346   1      
- 347   1        Attitude_Angle.Y = asin(-2 * q1 * q3 + 2 * q0 * q2) * 57.3;                 // pitch
- 348   1        Attitude_Angle.X = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2 * q2 + 1) * 57.3; // roll
- 349   1      }
+ 297          //  // 先把这些用得到的值算好
+ 298          //  float q0q0 = q0 * q0;
+ 299          //  float q0q1 = q0 * q1;
+ 300          //  float q0q2 = q0 * q2;
+ 301          //  float q1q1 = q1 * q1;
+ 302          //  float q1q3 = q1 * q3;
+ 303          //  float q2q2 = q2 * q2;
+ 304          //  float q2q3 = q2 * q3;
+ 305          //  float q3q3 = q3 * q3;
+ 306          
+ 307          //  if (ax * ay * az == 0)
+ 308          //  {
+ 309          //    return;
+ 310          //  }
+ 311          
+ 312          //  norm = sqrt(ax * ax + ay * ay + az * az); // acc数据归一化
+ 313          //  ax = ax / norm;
+ 314          //  ay = ay / norm;
+ 315          //  az = az / norm;
+ 316          
+ 317          //  // estimated direction of gravity and flux (v and w)  估计重力方向和流量/变迁
+ 318          //  vx = 2 * (q1q3 - q0q2); // 四元素中xyz的表示
+ 319          //  vy = 2 * (q0q1 + q2q3);
+ 320          //  vz = q0q0 - q1q1 - q2q2 + q3q3;
+ 321          
+ 322          //  // error is sum of cross product between reference direction of fields and direction measured by sensor
+             -s
+ 323          //  ex = (ay * vz - az * vy); // 向量外积在相减得到差分就是误差
+ 324          //  ey = (az * vx - ax * vz);
+ 325          //  ez = (ax * vy - ay * vx);
+ 326          
+ 327          //  exInt = exInt + ex * Ki; // 对误差进行积分
+ 328          //  eyInt = eyInt + ey * Ki;
+ 329          //  ezInt = ezInt + ez * Ki;
+ 330          
+ 331          //  // adjusted gyroscope measurements
+ 332          //  gx = gx + Kp * ex + exInt; // 将误差PI后补偿到陀螺仪，即补偿零点漂移
+ 333          //  gy = gy + Kp * ey + eyInt;
+ 334          //  gz = gz + Kp * ez + ezInt; // 这里的gz由于没有观测者进行矫正会产生漂移，表现出�
+             -�的就是积分自增或自减
+ 335          
+ 336          //  // integrate quaternion rate and normalise  // 四元素的微分方程
+ 337          //  q0 = q0 + (-q1 * gx - q2 * gy - q3 * gz) * halfT;
+ 338          //  q1 = q1 + (q0 * gx + q2 * gz - q3 * gy) * halfT;
+ 339          //  q2 = q2 + (q0 * gy - q1 * gz + q3 * gx) * halfT;
+ 340          //  q3 = q3 + (q0 * gz + q1 * gy - q2 * gx) * halfT;
+ 341          
+ 342          //  // normalise quaternion
+ 343          //  norm = sqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+ 344          //  q0 = q0 / norm;
+ 345          //  q1 = q1 / norm;
+ 346          //  q2 = q2 / norm;
+ 347          //  q3 = q3 / norm;
+ 348          
+ 349          //  Attitude_Angle.Y = asin(-2 * q1 * q3 + 2 * q0 * q2) * 57.3;                 // pitch
+ 350          //  // Attitude_Angle.X = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2 * q2 + 1) * 57.3; // roll
+ 351          //  // Yaw 无用
+ 352          //}
+ 353          /*
+ 354           *函数名：Another_Get_Attitude
+ 355           *描述：一节互补算法姿态解算（一节互补滤波解算）
+ 356           *输出：
+C51 COMPILER V9.01   MPU6050                                                               07/15/2020 14:47:16 PAGE 7   
+
+ 357           *输入：
+ 358           *调用：
+ 359          */
+ 360          const float my_K = 0.04;
+ 361          const float Acc_to_Ang_need = 57.2958; 
+ 362          const float dt = 0.001;
+ 363          float Ang_ACC;
+ 364          void Another_Get_Attitude(void)
+ 365          {
+ 366   1        Ang_ACC = Acc_to_Ang_need*(float)(atan2(-ACC.Z, -ACC.X));
+ 367   1        Attitude_Angle.Y = my_K*Ang_ACC + (1-my_K)*(Attitude_Angle.Y + GYRO.Y/7510.0 * dt);
+ 368   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   5340    ----
+   CODE SIZE        =   2517    ----
    CONSTANT SIZE    =     24    ----
-   XDATA SIZE       =    101     143
+   XDATA SIZE       =     89      59
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
-C51 COMPILER V9.01   MPU6050                                                               07/03/2020 15:17:28 PAGE 7   
-
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

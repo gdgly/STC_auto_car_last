@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/03/2020 15:17:27 PAGE 1   
+C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/15/2020 14:47:15 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE SEEKFREE_PRINTF
@@ -62,7 +62,7 @@ line level    source
   47   1          {
   48   2              pos_dat = dat;
   49   2              while(1)
-C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/03/2020 15:17:27 PAGE 2   
+C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/15/2020 14:47:15 PAGE 2   
 
   50   2              {
   51   3                  temp_data = pos_dat%radix;
@@ -126,7 +126,7 @@ line level    source
  109                          case 'i':// 有符号十进制整数
  110                          {
  111                              int8 vstr[33];
-C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/03/2020 15:17:27 PAGE 3   
+C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/15/2020 14:47:15 PAGE 3   
 
  112                              int32 ival = (int32)va_arg(arg, int32);
  113                              uint8 vlen = number_conversion_ascii((uint32)ival, vstr, 1, 10);
@@ -190,7 +190,7 @@ line level    source
  171                          
  172                          case 's':// 字符串
  173                          {
-C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/03/2020 15:17:27 PAGE 4   
+C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/15/2020 14:47:15 PAGE 4   
 
  174                              int8 *pc = va_arg(arg, int8 *);
  175                              while (*pc)
@@ -254,7 +254,7 @@ line level    source
  233   4                      {
  234   5                          int8 ch = (int8)va_arg(arg, uint32);
  235   5                          *buff = ch;
-C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/03/2020 15:17:27 PAGE 5   
+C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/15/2020 14:47:15 PAGE 5   
 
  236   5                          buff++;
  237   5                          buff_len++;
@@ -318,7 +318,7 @@ line level    source
  295   5                
  296   5                          vstr[vlen] = '.';
  297   5                          vlen++;
-C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/03/2020 15:17:27 PAGE 6   
+C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/15/2020 14:47:15 PAGE 6   
 
  298   5                          
  299   5                          printf_reverse_order(vstr,vlen);
@@ -382,7 +382,7 @@ line level    source
  357   4                      case 'p':// 以16进制形式输出指针
  358   4                      {
  359   5                          int8 vstr[33];
-C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/03/2020 15:17:27 PAGE 7   
+C51 COMPILER V9.01   SEEKFREE_PRINTF                                                       07/15/2020 14:47:15 PAGE 7   
 
  360   5                          uint32 ival = (uint32)va_arg(arg, uint32);
  361   5                          uint8 vlen = number_conversion_ascii(ival, vstr, 0, 16);

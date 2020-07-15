@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/03/2020 15:17:24 PAGE 1   
+C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/15/2020 14:47:14 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE SEEKFREE_ICM20602
@@ -62,7 +62,7 @@ line level    source
   45          //  @brief      ICM20602自检函数
   46          //  @param      NULL
   47          //  @return     void
-C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/03/2020 15:17:24 PAGE 2   
+C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/15/2020 14:47:14 PAGE 2   
 
   48          //  @since      v1.0
   49          //  Sample usage:       调用该函数前，请先调用模拟IIC的初始化
@@ -126,7 +126,7 @@ line level    source
  101          //  @since      v1.0
  102          //  Sample usage:       执行该函数后，直接查看对应的变量即可
  103          //--------------------------------------------------------------------------------------------------------
-C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/03/2020 15:17:24 PAGE 3   
+C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/15/2020 14:47:14 PAGE 3   
 
              ------------
  104          void get_icm20602_accdata_simiic(void)
@@ -190,7 +190,7 @@ line level    source
  156   1          for(i=0; i<8; i++)
  157   1          {
  158   2              ICM20602_MOSI(byte&0x80);
-C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/03/2020 15:17:24 PAGE 4   
+C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/15/2020 14:47:14 PAGE 4   
 
  159   2              byte <<= 1;
  160   2          ICM20602_SCK (0);
@@ -254,7 +254,7 @@ line level    source
  212   1          cmd |= ICM20602_SPI_R;
  213   1          icm_simspi_wr_byte(cmd);                                    
  214   1          for(i=0; i<num; i++)  
-C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/03/2020 15:17:24 PAGE 5   
+C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/15/2020 14:47:14 PAGE 5   
 
  215   1              val[i] = icm_simspi_wr_byte(0);                       
  216   1          ICM20602_CSN (1);                                       
@@ -318,7 +318,7 @@ line level    source
  269   1          
  270   1      }
  271          
-C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/03/2020 15:17:24 PAGE 6   
+C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/15/2020 14:47:14 PAGE 6   
 
  272          
  273          //--------------------------------------------------------------------------------------------------------
@@ -382,7 +382,7 @@ line level    source
              ------------
  325          //  @brief      通过SPI写一个byte,同时读取一个byte
  326          //  @param      byte        发送的数据    
-C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/03/2020 15:17:24 PAGE 7   
+C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/15/2020 14:47:14 PAGE 7   
 
  327          //  @return     uint8       return 返回status状态
  328          //  @since      v1.0
@@ -446,7 +446,7 @@ line level    source
  380          //  @param      *val    接收数据的地址
  381          //  @param      num     读取数量
  382          //  @return     void          
-C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/03/2020 15:17:24 PAGE 8   
+C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/15/2020 14:47:14 PAGE 8   
 
  383          //  @since      v1.0
  384          //  Sample usage:       
@@ -510,7 +510,7 @@ line level    source
  437   1        
  438   1          spi_init(ICM20602_SPI_N, ICM20602_SPI_SCLK_PIN, ICM20602_SPI_MOSI_PIN, ICM20602_SPI_MISO_PIN, 0, MASTE
              -R, SPI_SYSclk_DIV_4);
-C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/03/2020 15:17:24 PAGE 9   
+C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/15/2020 14:47:14 PAGE 9   
 
  439   1      
  440   1          icm20602_self3_check();//检测
@@ -574,7 +574,7 @@ line level    source
  492          
  493          
  494          
-C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/03/2020 15:17:24 PAGE 10  
+C51 COMPILER V9.01   SEEKFREE_ICM20602                                                     07/15/2020 14:47:14 PAGE 10  
 
  495          
  496          

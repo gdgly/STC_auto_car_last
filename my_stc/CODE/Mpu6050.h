@@ -99,9 +99,9 @@ void MPU6050_Offset(void);
 void MPU6050_GetData(S_INT16_XYZ *GYRO, S_INT16_XYZ *ACC);
 int16 GetData(uchar REG_Address);
 void Data_Filter(void);
-void KalmanFilter(float ACC_Angle);
-void Get_Attitude(void); // 四元素算法姿态解算
+//void KalmanFilter(float ACC_Angle);
+//void Get_Attitude(void); // 四元素算法姿态解算
 void Another_Get_Attitude(void); //一阶互补算法姿态解算
-void IMUupdate(float gx, float gy, float gz, float ax, float ay, float az);
+//void IMUupdate(float gx, float gy, float gz, float ax, float ay, float az);
 
 #endif

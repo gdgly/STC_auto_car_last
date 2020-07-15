@@ -31,7 +31,8 @@
 ".\Out_File\PID.obj",
 ".\Out_File\System_Init.obj",
 ".\Out_File\MyDebug.obj",
-".\Out_File\oled.obj" 
+".\Out_File\oled.obj",
+".\Out_File\outputdata.obj" 
 TO ".\Out_File\SEEKFREE" 
 PRINT(".\Out_File\SEEKFREE.m51") RAMSIZE(256) 
 DISABLEWARNING (16) 
